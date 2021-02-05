@@ -17,6 +17,7 @@ defmodule HodlWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/new-hodl", PageController, :calculator
   end
 
   # Other scopes may use custom stacks.

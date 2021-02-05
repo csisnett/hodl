@@ -4,4 +4,8 @@ defmodule HodlWeb.PageController do
   def index(conn, _params) do
     render(conn, "index.html")
   end
+
+  def calculator(conn, _params) do
+    render(conn, "calculator.html")
+  end
 end
