@@ -1,0 +1,5 @@
+<h1>Edit Coin</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.coin_path(@conn, :update, @coin)) %>
+
+<span><%= link "Back", to: Routes.coin_path(@conn, :index) %></span>

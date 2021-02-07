@@ -1,0 +1,18 @@
+<h1>Show Coin</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @coin.name %>
+  </li>
+
+  <li>
+    <strong>Symbol:</strong>
+    <%= @coin.symbol %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.coin_path(@conn, :edit, @coin) %></span>
+<span><%= link "Back", to: Routes.coin_path(@conn, :index) %></span>

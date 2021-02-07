@@ -1,0 +1,28 @@
+<h1>Listing Coins</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Symbol</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for coin <- @coins do %>
+    <tr>
+      <td><%= coin.name %></td>
+      <td><%= coin.symbol %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.coin_path(@conn, :show, coin) %></span>
+        <span><%= link "Edit", to: Routes.coin_path(@conn, :edit, coin) %></span>
+        <span><%= link "Delete", to: Routes.coin_path(@conn, :delete, coin), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Coin", to: Routes.coin_path(@conn, :new) %></span>
