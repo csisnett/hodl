@@ -1,0 +1,5 @@
+<h1>Edit Hodlschedule</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.hodlschedule_path(@conn, :update, @hodlschedule)) %>
+
+<span><%= link "Back", to: Routes.hodlschedule_path(@conn, :index) %></span>

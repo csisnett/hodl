@@ -101,4 +101,196 @@ defmodule Hodl.Portfolio do
   def change_coin(%Coin{} = coin, attrs \\ %{}) do
     Coin.changeset(coin, attrs)
   end
+
+  alias Hodl.Portfolio.Hodlschedule
+
+  @doc """
+  Returns the list of hodlschedules.
+
+  ## Examples
+
+      iex> list_hodlschedules()
+      [%Hodlschedule{}, ...]
+
+  """
+  def list_hodlschedules do
+    Repo.all(Hodlschedule)
+  end
+
+  @doc """
+  Gets a single hodlschedule.
+
+  Raises `Ecto.NoResultsError` if the Hodlschedule does not exist.
+
+  ## Examples
+
+      iex> get_hodlschedule!(123)
+      %Hodlschedule{}
+
+      iex> get_hodlschedule!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_hodlschedule!(id), do: Repo.get!(Hodlschedule, id)
+
+  @doc """
+  Creates a hodlschedule.
+
+  ## Examples
+
+      iex> create_hodlschedule(%{field: value})
+      {:ok, %Hodlschedule{}}
+
+      iex> create_hodlschedule(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_hodlschedule(attrs \\ %{}) do
+    %Hodlschedule{}
+    |> Hodlschedule.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a hodlschedule.
+
+  ## Examples
+
+      iex> update_hodlschedule(hodlschedule, %{field: new_value})
+      {:ok, %Hodlschedule{}}
+
+      iex> update_hodlschedule(hodlschedule, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_hodlschedule(%Hodlschedule{} = hodlschedule, attrs) do
+    hodlschedule
+    |> Hodlschedule.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a hodlschedule.
+
+  ## Examples
+
+      iex> delete_hodlschedule(hodlschedule)
+      {:ok, %Hodlschedule{}}
+
+      iex> delete_hodlschedule(hodlschedule)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_hodlschedule(%Hodlschedule{} = hodlschedule) do
+    Repo.delete(hodlschedule)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking hodlschedule changes.
+
+  ## Examples
+
+      iex> change_hodlschedule(hodlschedule)
+      %Ecto.Changeset{data: %Hodlschedule{}}
+
+  """
+  def change_hodlschedule(%Hodlschedule{} = hodlschedule, attrs \\ %{}) do
+    Hodlschedule.changeset(hodlschedule, attrs)
+  end
+
+  alias Hodl.Portfolio.Cycle
+
+  @doc """
+  Returns the list of cycles.
+
+  ## Examples
+
+      iex> list_cycles()
+      [%Cycle{}, ...]
+
+  """
+  def list_cycles do
+    Repo.all(Cycle)
+  end
+
+  @doc """
+  Gets a single cycle.
+
+  Raises `Ecto.NoResultsError` if the Cycle does not exist.
+
+  ## Examples
+
+      iex> get_cycle!(123)
+      %Cycle{}
+
+      iex> get_cycle!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_cycle!(id), do: Repo.get!(Cycle, id)
+
+  @doc """
+  Creates a cycle.
+
+  ## Examples
+
+      iex> create_cycle(%{field: value})
+      {:ok, %Cycle{}}
+
+      iex> create_cycle(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_cycle(attrs \\ %{}) do
+    %Cycle{}
+    |> Cycle.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a cycle.
+
+  ## Examples
+
+      iex> update_cycle(cycle, %{field: new_value})
+      {:ok, %Cycle{}}
+
+      iex> update_cycle(cycle, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_cycle(%Cycle{} = cycle, attrs) do
+    cycle
+    |> Cycle.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a cycle.
+
+  ## Examples
+
+      iex> delete_cycle(cycle)
+      {:ok, %Cycle{}}
+
+      iex> delete_cycle(cycle)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_cycle(%Cycle{} = cycle) do
+    Repo.delete(cycle)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking cycle changes.
+
+  ## Examples
+
+      iex> change_cycle(cycle)
+      %Ecto.Changeset{data: %Cycle{}}
+
+  """
+  def change_cycle(%Cycle{} = cycle, attrs \\ %{}) do
+    Cycle.changeset(cycle, attrs)
+  end
 end

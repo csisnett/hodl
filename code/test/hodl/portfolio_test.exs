@@ -63,4 +63,122 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_coin(coin)
     end
   end
+
+  describe "hodlschedules" do
+    alias Hodl.Portfolio.Hodlschedule
+
+    @valid_attrs %{initial_coin_price: "120.5"}
+    @update_attrs %{initial_coin_price: "456.7"}
+    @invalid_attrs %{initial_coin_price: nil}
+
+    def hodlschedule_fixture(attrs \\ %{}) do
+      {:ok, hodlschedule} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_hodlschedule()
+
+      hodlschedule
+    end
+
+    test "list_hodlschedules/0 returns all hodlschedules" do
+      hodlschedule = hodlschedule_fixture()
+      assert Portfolio.list_hodlschedules() == [hodlschedule]
+    end
+
+    test "get_hodlschedule!/1 returns the hodlschedule with given id" do
+      hodlschedule = hodlschedule_fixture()
+      assert Portfolio.get_hodlschedule!(hodlschedule.id) == hodlschedule
+    end
+
+    test "create_hodlschedule/1 with valid data creates a hodlschedule" do
+      assert {:ok, %Hodlschedule{} = hodlschedule} = Portfolio.create_hodlschedule(@valid_attrs)
+      assert hodlschedule.initial_coin_price == Decimal.new("120.5")
+    end
+
+    test "create_hodlschedule/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_hodlschedule(@invalid_attrs)
+    end
+
+    test "update_hodlschedule/2 with valid data updates the hodlschedule" do
+      hodlschedule = hodlschedule_fixture()
+      assert {:ok, %Hodlschedule{} = hodlschedule} = Portfolio.update_hodlschedule(hodlschedule, @update_attrs)
+      assert hodlschedule.initial_coin_price == Decimal.new("456.7")
+    end
+
+    test "update_hodlschedule/2 with invalid data returns error changeset" do
+      hodlschedule = hodlschedule_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_hodlschedule(hodlschedule, @invalid_attrs)
+      assert hodlschedule == Portfolio.get_hodlschedule!(hodlschedule.id)
+    end
+
+    test "delete_hodlschedule/1 deletes the hodlschedule" do
+      hodlschedule = hodlschedule_fixture()
+      assert {:ok, %Hodlschedule{}} = Portfolio.delete_hodlschedule(hodlschedule)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_hodlschedule!(hodlschedule.id) end
+    end
+
+    test "change_hodlschedule/1 returns a hodlschedule changeset" do
+      hodlschedule = hodlschedule_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_hodlschedule(hodlschedule)
+    end
+  end
+
+  describe "cycles" do
+    alias Hodl.Portfolio.Cycle
+
+    @valid_attrs %{price_per_coin: "120.5"}
+    @update_attrs %{price_per_coin: "456.7"}
+    @invalid_attrs %{price_per_coin: nil}
+
+    def cycle_fixture(attrs \\ %{}) do
+      {:ok, cycle} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_cycle()
+
+      cycle
+    end
+
+    test "list_cycles/0 returns all cycles" do
+      cycle = cycle_fixture()
+      assert Portfolio.list_cycles() == [cycle]
+    end
+
+    test "get_cycle!/1 returns the cycle with given id" do
+      cycle = cycle_fixture()
+      assert Portfolio.get_cycle!(cycle.id) == cycle
+    end
+
+    test "create_cycle/1 with valid data creates a cycle" do
+      assert {:ok, %Cycle{} = cycle} = Portfolio.create_cycle(@valid_attrs)
+      assert cycle.price_per_coin == Decimal.new("120.5")
+    end
+
+    test "create_cycle/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_cycle(@invalid_attrs)
+    end
+
+    test "update_cycle/2 with valid data updates the cycle" do
+      cycle = cycle_fixture()
+      assert {:ok, %Cycle{} = cycle} = Portfolio.update_cycle(cycle, @update_attrs)
+      assert cycle.price_per_coin == Decimal.new("456.7")
+    end
+
+    test "update_cycle/2 with invalid data returns error changeset" do
+      cycle = cycle_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_cycle(cycle, @invalid_attrs)
+      assert cycle == Portfolio.get_cycle!(cycle.id)
+    end
+
+    test "delete_cycle/1 deletes the cycle" do
+      cycle = cycle_fixture()
+      assert {:ok, %Cycle{}} = Portfolio.delete_cycle(cycle)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_cycle!(cycle.id) end
+    end
+
+    test "change_cycle/1 returns a cycle changeset" do
+      cycle = cycle_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_cycle(cycle)
+    end
+  end
 end

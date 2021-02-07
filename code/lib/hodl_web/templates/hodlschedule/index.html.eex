@@ -1,0 +1,26 @@
+<h1>Listing Hodlschedules</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Initial coin price</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for hodlschedule <- @hodlschedules do %>
+    <tr>
+      <td><%= hodlschedule.initial_coin_price %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.hodlschedule_path(@conn, :show, hodlschedule) %></span>
+        <span><%= link "Edit", to: Routes.hodlschedule_path(@conn, :edit, hodlschedule) %></span>
+        <span><%= link "Delete", to: Routes.hodlschedule_path(@conn, :delete, hodlschedule), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Hodlschedule", to: Routes.hodlschedule_path(@conn, :new) %></span>

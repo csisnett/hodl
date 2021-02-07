@@ -1,0 +1,13 @@
+<h1>Show Hodlschedule</h1>
+
+<ul>
+
+  <li>
+    <strong>Initial coin price:</strong>
+    <%= @hodlschedule.initial_coin_price %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.hodlschedule_path(@conn, :edit, @hodlschedule) %></span>
+<span><%= link "Back", to: Routes.hodlschedule_path(@conn, :index) %></span>
