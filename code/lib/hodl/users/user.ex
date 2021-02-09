@@ -31,7 +31,8 @@ defmodule Hodl.Users.User do
       "swift", "grande", "hodl", "hodler", "mello", "marshmello",
       "mars", "venus", "neptune", "pluto", "saturn", "andromeda",
       "milkyway", "owl", "acqua", "moon", "blueclues", "cafe", "coffee",
-      "chocolate", "almond", "tea", "sun"]
+      "chocolate", "almond", "tea", "sun", "phoenix", "tiger", "giraffe",
+      "zebra"]
 
     noun_or_adjective = :rand.uniform(2)
     random_number =  :rand.uniform(999) |> Integer.to_string
