@@ -181,4 +181,63 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_cycle(cycle)
     end
   end
+
+  describe "quotes" do
+    alias Hodl.Portfolio.Quote
+
+    @valid_attrs %{price_usd: "120.5"}
+    @update_attrs %{price_usd: "456.7"}
+    @invalid_attrs %{price_usd: nil}
+
+    def quote_fixture(attrs \\ %{}) do
+      {:ok, quote} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_quote()
+
+      quote
+    end
+
+    test "list_quotes/0 returns all quotes" do
+      quote = quote_fixture()
+      assert Portfolio.list_quotes() == [quote]
+    end
+
+    test "get_quote!/1 returns the quote with given id" do
+      quote = quote_fixture()
+      assert Portfolio.get_quote!(quote.id) == quote
+    end
+
+    test "create_quote/1 with valid data creates a quote" do
+      assert {:ok, %Quote{} = quote} = Portfolio.create_quote(@valid_attrs)
+      assert quote.price_usd == Decimal.new("120.5")
+    end
+
+    test "create_quote/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_quote(@invalid_attrs)
+    end
+
+    test "update_quote/2 with valid data updates the quote" do
+      quote = quote_fixture()
+      assert {:ok, %Quote{} = quote} = Portfolio.update_quote(quote, @update_attrs)
+      assert quote.price_usd == Decimal.new("456.7")
+    end
+
+    test "update_quote/2 with invalid data returns error changeset" do
+      quote = quote_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_quote(quote, @invalid_attrs)
+      assert quote == Portfolio.get_quote!(quote.id)
+    end
+
+    test "delete_quote/1 deletes the quote" do
+      quote = quote_fixture()
+      assert {:ok, %Quote{}} = Portfolio.delete_quote(quote)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_quote!(quote.id) end
+    end
+
+    test "change_quote/1 returns a quote changeset" do
+      quote = quote_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_quote(quote)
+    end
+  end
 end
