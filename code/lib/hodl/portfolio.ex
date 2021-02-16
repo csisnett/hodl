@@ -309,6 +309,32 @@ defmodule Hodl.Portfolio do
     Repo.all(Quote)
   end
 
+  def test_api do
+    api_key = System.get_env("MARKETCAP_TEST_KEY")
+
+    {:ok, response} = HTTPoison.get("https://sandbox-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Content-Type", "application/json"}, {"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
+    {:ok, response_body} = Jason.decode(response.body)
+  end
+
+  def get_and_save_coins do
+    api_key = System.get_env("MARKETCAP_KEY")
+
+    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
+    {:ok, response_body} = Jason.decode(response.body)
+    %{"data" => data} = response_body
+    create_coins(data)
+  end
+
+  def create_coins([]) do
+    []
+  end
+
+  def create_coins(coin_list) do
+    [first | rest] = coin_list
+    {:ok, coin} = create_coin(first)
+    create_coins(rest)
+  end
+
   @doc """
   Gets a single quote.
 
