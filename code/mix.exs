@@ -46,7 +46,8 @@ defmodule Hodl.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:pow, "~> 1.0.22"},
-      {:ecto_shortuuid, "~> 0.1.3"}
+      {:ecto_shortuuid, "~> 0.1.3"},
+      {:httpoison, "~> 1.8"}
     ]
   end
 
