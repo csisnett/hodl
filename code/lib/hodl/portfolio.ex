@@ -316,13 +316,21 @@ defmodule Hodl.Portfolio do
     {:ok, response_body} = Jason.decode(response.body)
   end
 
-  def get_and_save_coins do
+  def get_crypto_ids do
+    api_key = System.get_env("MARKETCAP_KEY")
+    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/map", [{"Content-Type", "application/json"}, {"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
+    {:ok, response_body} = Jason.decode(response.body)
+    %{"data" => data} = response_body
+    Enum.map(data, fn crypto -> Map.put(crypto, "coinmarketcap_id", crypto["id"])end)
+  end
+
+  def get_coins_quotes do
     api_key = System.get_env("MARKETCAP_KEY")
 
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
     {:ok, response_body} = Jason.decode(response.body)
     %{"data" => data} = response_body
-    create_coins(data)
+    data
   end
 
   def create_coins([]) do
@@ -333,6 +341,23 @@ defmodule Hodl.Portfolio do
     [first | rest] = coin_list
     {:ok, coin} = create_coin(first)
     create_coins(rest)
+  end
+
+  def get_quote_info(%{} = coin) do
+    price = coin["quote"]["USD"]["price"]
+    coinmarketcap_id = coin["id"]
+    %{"price_usd" => price, "coinmarketcap_id" => coinmarketcap_id}
+  end
+
+  def create_new_quotes do
+    coins = get_coins_quotes()
+    Enum.each(coins, fn coin -> get_quote_info(coin) |> create_new_quote end)
+  end
+
+  def create_new_quote(%{"coinmarketcap_id" => id} = quote_params) do
+    coin = Repo.get_by(Coin, coinmarketcap_id: id)
+    quote_params = Map.put(quote_params, "coin_id", coin.id)
+    create_quote(quote_params)
   end
 
   @doc """
