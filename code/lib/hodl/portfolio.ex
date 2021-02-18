@@ -50,9 +50,18 @@ defmodule Hodl.Portfolio do
 
   """
   def create_coin(attrs \\ %{}) do
-    %Coin{}
-    |> Coin.changeset(attrs)
-    |> Repo.insert()
+    case attrs["external_platform_id"] do
+      nil ->
+        %Coin{}
+        |> Coin.changeset(attrs)
+        |> Repo.insert()
+      external_platform_id ->
+        platform_coin = Repo.get_by(Coin, coinmarketcap_id: external_platform_id)
+        attrs = attrs |> Map.put("platform_id", platform_coin.id)
+        %Coin{}
+        |> Coin.changeset(attrs)
+        |> Repo.insert()
+    end
   end
 
   @doc """
@@ -322,6 +331,8 @@ defmodule Hodl.Portfolio do
     {:ok, response_body} = Jason.decode(response.body)
     %{"data" => data} = response_body
     Enum.map(data, fn crypto -> Map.put(crypto, "coinmarketcap_id", crypto["id"])end)
+    |> Enum.map(fn crypto -> Map.put(crypto, "external_platform_id", crypto["platform"]["id"])end)
+    |> Enum.map(fn crypto -> Map.put(crypto, "token_address", crypto["platform"]["token_address"])end)
   end
 
   def get_coins_quotes do
@@ -337,10 +348,30 @@ defmodule Hodl.Portfolio do
     []
   end
 
+  def create_platform_coins(coin_list) do
+    coin_platforms = Enum.filter(coin_list, fn coin -> coin["platform"] == nil end)
+    create_coins(coin_platforms)
+  end
+
+  def bela(coin_list) do
+    Enum.filter(coin_list, fn coin -> coin["coinmarketcap_id"] == 217 end)
+  end
+
+  def create_token_coins(coin_list) do
+    tokens = Enum.filter(coin_list, fn coin -> coin["platform"] != nil end)
+    create_coins(tokens)
+  end
+
   def create_coins(coin_list) do
     [first | rest] = coin_list
-    {:ok, coin} = create_coin(first)
-    create_coins(rest)
+    coin = Repo.get_by(Coin, coinmarketcap_id: first["id"])
+    case coin do
+    nil -> 
+      {:ok, coin} = create_coin(first)
+      create_coins(rest)
+
+    coin -> create_coins(rest)
+    end
   end
 
   def get_quote_info(%{} = coin) do

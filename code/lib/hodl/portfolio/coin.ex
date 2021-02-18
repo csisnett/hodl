@@ -19,5 +19,6 @@ defmodule Hodl.Portfolio.Coin do
     |> cast(attrs, [:name, :symbol, :coinmarketcap_id, :platform_id, :token_address])
     |> validate_required([:name, :symbol, :coinmarketcap_id])
     |> foreign_key_constraint(:platform_id)
+    |> unique_constraint(:coinmarketcap_id)
   end
 end
