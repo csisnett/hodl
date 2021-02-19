@@ -596,4 +596,100 @@ defmodule Hodl.Portfolio do
   def change_ranking(%Ranking{} = ranking, attrs \\ %{}) do
     Ranking.changeset(ranking, attrs)
   end
+
+  alias Hodl.Portfolio.Coinrank
+
+  @doc """
+  Returns the list of coinranks.
+
+  ## Examples
+
+      iex> list_coinranks()
+      [%Coinrank{}, ...]
+
+  """
+  def list_coinranks do
+    Repo.all(Coinrank)
+  end
+
+  @doc """
+  Gets a single coinrank.
+
+  Raises `Ecto.NoResultsError` if the Coinrank does not exist.
+
+  ## Examples
+
+      iex> get_coinrank!(123)
+      %Coinrank{}
+
+      iex> get_coinrank!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_coinrank!(id), do: Repo.get!(Coinrank, id)
+
+  @doc """
+  Creates a coinrank.
+
+  ## Examples
+
+      iex> create_coinrank(%{field: value})
+      {:ok, %Coinrank{}}
+
+      iex> create_coinrank(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_coinrank(attrs \\ %{}) do
+    %Coinrank{}
+    |> Coinrank.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a coinrank.
+
+  ## Examples
+
+      iex> update_coinrank(coinrank, %{field: new_value})
+      {:ok, %Coinrank{}}
+
+      iex> update_coinrank(coinrank, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_coinrank(%Coinrank{} = coinrank, attrs) do
+    coinrank
+    |> Coinrank.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a coinrank.
+
+  ## Examples
+
+      iex> delete_coinrank(coinrank)
+      {:ok, %Coinrank{}}
+
+      iex> delete_coinrank(coinrank)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_coinrank(%Coinrank{} = coinrank) do
+    Repo.delete(coinrank)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking coinrank changes.
+
+  ## Examples
+
+      iex> change_coinrank(coinrank)
+      %Ecto.Changeset{data: %Coinrank{}}
+
+  """
+  def change_coinrank(%Coinrank{} = coinrank, attrs \\ %{}) do
+    Coinrank.changeset(coinrank, attrs)
+  end
 end

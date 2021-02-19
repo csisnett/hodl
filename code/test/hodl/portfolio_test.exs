@@ -299,4 +299,63 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_ranking(ranking)
     end
   end
+
+  describe "coinranks" do
+    alias Hodl.Portfolio.Coinrank
+
+    @valid_attrs %{rank: 42}
+    @update_attrs %{rank: 43}
+    @invalid_attrs %{rank: nil}
+
+    def coinrank_fixture(attrs \\ %{}) do
+      {:ok, coinrank} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_coinrank()
+
+      coinrank
+    end
+
+    test "list_coinranks/0 returns all coinranks" do
+      coinrank = coinrank_fixture()
+      assert Portfolio.list_coinranks() == [coinrank]
+    end
+
+    test "get_coinrank!/1 returns the coinrank with given id" do
+      coinrank = coinrank_fixture()
+      assert Portfolio.get_coinrank!(coinrank.id) == coinrank
+    end
+
+    test "create_coinrank/1 with valid data creates a coinrank" do
+      assert {:ok, %Coinrank{} = coinrank} = Portfolio.create_coinrank(@valid_attrs)
+      assert coinrank.rank == 42
+    end
+
+    test "create_coinrank/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_coinrank(@invalid_attrs)
+    end
+
+    test "update_coinrank/2 with valid data updates the coinrank" do
+      coinrank = coinrank_fixture()
+      assert {:ok, %Coinrank{} = coinrank} = Portfolio.update_coinrank(coinrank, @update_attrs)
+      assert coinrank.rank == 43
+    end
+
+    test "update_coinrank/2 with invalid data returns error changeset" do
+      coinrank = coinrank_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_coinrank(coinrank, @invalid_attrs)
+      assert coinrank == Portfolio.get_coinrank!(coinrank.id)
+    end
+
+    test "delete_coinrank/1 deletes the coinrank" do
+      coinrank = coinrank_fixture()
+      assert {:ok, %Coinrank{}} = Portfolio.delete_coinrank(coinrank)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_coinrank!(coinrank.id) end
+    end
+
+    test "change_coinrank/1 returns a coinrank changeset" do
+      coinrank = coinrank_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_coinrank(coinrank)
+    end
+  end
 end
