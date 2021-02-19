@@ -6,7 +6,7 @@ defmodule Hodl.Portfolio do
   import Ecto.Query, warn: false
   alias Hodl.Repo
   alias Hodl.Portfolio
-  alias Hodl.Portfolio.Coin
+  alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking}
 
   @doc """
   Returns the list of coins.
@@ -111,8 +111,6 @@ defmodule Hodl.Portfolio do
     Coin.changeset(coin, attrs)
   end
 
-  alias Hodl.Portfolio.Hodlschedule
-
   @doc """
   Returns the list of hodlschedules.
 
@@ -206,8 +204,6 @@ defmodule Hodl.Portfolio do
   def change_hodlschedule(%Hodlschedule{} = hodlschedule, attrs \\ %{}) do
     Hodlschedule.changeset(hodlschedule, attrs)
   end
-
-  alias Hodl.Portfolio.Cycle
 
   @doc """
   Returns the list of cycles.
@@ -303,8 +299,6 @@ defmodule Hodl.Portfolio do
     Cycle.changeset(cycle, attrs)
   end
 
-  alias Hodl.Portfolio.Quote
-
   @doc """
   Returns the list of quotes.
 
@@ -332,9 +326,14 @@ defmodule Hodl.Portfolio do
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/map", [{"Content-Type", "application/json"}, {"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
     {:ok, response_body} = Jason.decode(response.body)
     %{"data" => data} = response_body
-    Enum.map(data, fn crypto -> Map.put(crypto, "coinmarketcap_id", crypto["id"])end)
-    |> Enum.map(fn crypto -> Map.put(crypto, "external_platform_id", crypto["platform"]["id"])end)
-    |> Enum.map(fn crypto -> Map.put(crypto, "token_address", crypto["platform"]["token_address"])end)
+    Enum.map(data, fn crypto -> prepare_coin_for_creation(crypto)end)
+  end
+
+  def prepare_coin_for_creation(%{} = crypto) do
+    crypto
+    |> Map.put(crypto, "coinmarketcap_id", crypto["id"])
+    |> Map.put(crypto, "external_platform_id", crypto["platform"]["id"])
+    |> Map.put(crypto, "token_address", crypto["platform"]["token_address"])
   end
 
   # Takes a list of coin params and creates the coins that are platforms only
@@ -501,8 +500,6 @@ defmodule Hodl.Portfolio do
     Quote.changeset(quote, attrs)
   end
 
-  alias Hodl.Portfolio.Ranking
-
   @doc """
   Returns the list of rankings.
 
@@ -568,6 +565,39 @@ defmodule Hodl.Portfolio do
     |> Repo.update()
   end
 
+  def get_or_create_coin(%{} = params) do
+    coin = Repo.get_by(Coin, coinmarketcap_id: params["id"])
+    case coin do
+      nil -> 
+        {:ok, coin} = prepare_coin_for_creation(params) |> create_coin()
+        coin |> Map.put("cmc_rank", params["cmc_rank"])
+      coin ->
+        coin |> Map.put("cmc_rank", params["cmc_rank"])
+    end
+  end
+
+  def delete_all_coinranks(%Ranking{id: id} = ranking) do
+    from(c in Coinrank, where: c.ranking_id == ^id) |> Repo.delete_all
+  end
+
+  def prepare_for_coinrank_creation(%Coin{} = coin, %Ranking{} = ranking) do
+    %{"position" => coin["cmc_rank"], "coin_id" => coin.id, "ranking_id" => ranking.id}
+  end
+
+  def insert_all_coinranks(%Ranking{} = ranking, coins_params) when is_list(coins_params) do
+    coins = Enum.map(coins_params, fn coin_params -> get_or_create_coin(coin_params) end)
+    Enum.each(coins, fn coin -> prepare_for_coinrank_creation(coin, ranking) |> create_coinrank() end)
+  end
+
+  def update_ranks(%Ranking{} = ranking) do
+    cmc_coins = get_top_quotes()
+
+    Repo.transaction(fn ->
+      delete_all_coinranks(ranking)
+      insert_all_coinranks(ranking, cmc_coins)
+    end)
+  end
+
   @doc """
   Deletes a ranking.
 
@@ -596,8 +626,6 @@ defmodule Hodl.Portfolio do
   def change_ranking(%Ranking{} = ranking, attrs \\ %{}) do
     Ranking.changeset(ranking, attrs)
   end
-
-  alias Hodl.Portfolio.Coinrank
 
   @doc """
   Returns the list of coinranks.
