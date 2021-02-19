@@ -240,4 +240,63 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_quote(quote)
     end
   end
+
+  describe "rankings" do
+    alias Hodl.Portfolio.Ranking
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def ranking_fixture(attrs \\ %{}) do
+      {:ok, ranking} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_ranking()
+
+      ranking
+    end
+
+    test "list_rankings/0 returns all rankings" do
+      ranking = ranking_fixture()
+      assert Portfolio.list_rankings() == [ranking]
+    end
+
+    test "get_ranking!/1 returns the ranking with given id" do
+      ranking = ranking_fixture()
+      assert Portfolio.get_ranking!(ranking.id) == ranking
+    end
+
+    test "create_ranking/1 with valid data creates a ranking" do
+      assert {:ok, %Ranking{} = ranking} = Portfolio.create_ranking(@valid_attrs)
+      assert ranking.name == "some name"
+    end
+
+    test "create_ranking/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_ranking(@invalid_attrs)
+    end
+
+    test "update_ranking/2 with valid data updates the ranking" do
+      ranking = ranking_fixture()
+      assert {:ok, %Ranking{} = ranking} = Portfolio.update_ranking(ranking, @update_attrs)
+      assert ranking.name == "some updated name"
+    end
+
+    test "update_ranking/2 with invalid data returns error changeset" do
+      ranking = ranking_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_ranking(ranking, @invalid_attrs)
+      assert ranking == Portfolio.get_ranking!(ranking.id)
+    end
+
+    test "delete_ranking/1 deletes the ranking" do
+      ranking = ranking_fixture()
+      assert {:ok, %Ranking{}} = Portfolio.delete_ranking(ranking)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_ranking!(ranking.id) end
+    end
+
+    test "change_ranking/1 returns a ranking changeset" do
+      ranking = ranking_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_ranking(ranking)
+    end
+  end
 end

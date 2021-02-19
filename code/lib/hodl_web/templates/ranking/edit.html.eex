@@ -1,0 +1,5 @@
+<h1>Edit Ranking</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.ranking_path(@conn, :update, @ranking)) %>
+
+<span><%= link "Back", to: Routes.ranking_path(@conn, :index) %></span>

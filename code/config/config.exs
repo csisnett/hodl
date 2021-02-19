@@ -30,6 +30,11 @@ config :hodl, :pow,
   user: Hodl.Users.User,
   repo: Hodl.Repo
 
+config :hodl, Oban,
+repo: Hodl.Repo,
+plugins: [Oban.Plugins.Pruner],
+queues: [events: 3]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

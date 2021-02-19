@@ -1,0 +1,13 @@
+<h1>Show Ranking</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @ranking.name %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.ranking_path(@conn, :edit, @ranking) %></span>
+<span><%= link "Back", to: Routes.ranking_path(@conn, :index) %></span>

@@ -5,7 +5,7 @@ defmodule Hodl.Portfolio do
 
   import Ecto.Query, warn: false
   alias Hodl.Repo
-
+  alias Hodl.Portfolio
   alias Hodl.Portfolio.Coin
 
   @doc """
@@ -318,6 +318,7 @@ defmodule Hodl.Portfolio do
     Repo.all(Quote)
   end
 
+  # Test of the coin market cap API
   def test_api do
     api_key = System.get_env("MARKETCAP_TEST_KEY")
 
@@ -325,6 +326,7 @@ defmodule Hodl.Portfolio do
     {:ok, response_body} = Jason.decode(response.body)
   end
 
+  # Returns all the cryptos in coin market cap and prepares them for insertion into the db
   def get_crypto_ids do
     api_key = System.get_env("MARKETCAP_KEY")
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/map", [{"Content-Type", "application/json"}, {"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
@@ -335,33 +337,25 @@ defmodule Hodl.Portfolio do
     |> Enum.map(fn crypto -> Map.put(crypto, "token_address", crypto["platform"]["token_address"])end)
   end
 
-  def get_coins_quotes do
-    api_key = System.get_env("MARKETCAP_KEY")
-
-    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
-    {:ok, response_body} = Jason.decode(response.body)
-    %{"data" => data} = response_body
-    data
-  end
-
-  def create_coins([]) do
-    []
-  end
-
+  # Takes a list of coin params and creates the coins that are platforms only
   def create_platform_coins(coin_list) do
     coin_platforms = Enum.filter(coin_list, fn coin -> coin["platform"] == nil end)
     create_coins(coin_platforms)
   end
 
-  def bela(coin_list) do
-    Enum.filter(coin_list, fn coin -> coin["coinmarketcap_id"] == 217 end)
-  end
-
+   # Takes a list of coin params and creates the coins that are tokens only
   def create_token_coins(coin_list) do
     tokens = Enum.filter(coin_list, fn coin -> coin["platform"] != nil end)
     create_coins(tokens)
   end
 
+    # Base case of the following function
+  def create_coins([]) do
+    []
+  end
+
+  # [%{}, ...] ->  []
+  # Takes a list of coins maps as inputs and creates the %Coins{}. Returns an empty list
   def create_coins(coin_list) do
     [first | rest] = coin_list
     coin = Repo.get_by(Coin, coinmarketcap_id: first["id"])
@@ -374,17 +368,52 @@ defmodule Hodl.Portfolio do
     end
   end
 
+  # %{"id" => 2, "quote" => %{"USD" => %{"price" => 12.0}}} -> %{"coinmarketcap_id" => 2, "price_usd" => 12.0}
+  # Puts the important info of the coin into the root map
   def get_quote_info(%{} = coin) do
     price = coin["quote"]["USD"]["price"]
     coinmarketcap_id = coin["id"]
     %{"price_usd" => price, "coinmarketcap_id" => coinmarketcap_id}
   end
 
-  def create_new_quotes do
-    coins = get_coins_quotes()
-    Enum.each(coins, fn coin -> get_quote_info(coin) |> create_new_quote end)
+  # -> [%{"id" => 1, .. "quote" => %{"USD" => %{"price" => 12.0}}}, ...]
+  #Gets the quotes in USD and metadata of the current top 100 cryptos in coinmarketcap
+  def get_top_quotes do
+    api_key = System.get_env("MARKETCAP_KEY")
+
+    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
+    {:ok, response_body} = Jason.decode(response.body)
+    %{"data" => data} = response_body
+    data
   end
 
+  # [%Coin{id: 1}, ...] -> %{"1" => %{...}, ...}
+  # Gets the quotes from the list of coins given
+  def get_coin_quote(coins) when is_list(coins) do
+    {_, ids} = Enum.map_reduce(coins, "", fn coin, acc -> {coin, acc <> ","  <> Integer.to_string(coin.coinmarketcap_id)}end)
+    ids = String.slice(ids, 1..-1) #Slice leading comma
+    api_key = System.get_env("MARKETCAP_KEY")
+    params = [id: ids]
+    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}], [params: params])
+    {:ok, response_body} = Jason.decode(response.body)
+    %{"data" => data} = response_body
+    data
+  end
+
+  def test_oban_job do
+    %{"name" => "get_top_quotes"}
+    |> Portfolio.QuoteWorker.new(schedule_in: 60)
+    |> Oban.insert()
+  end
+
+  # [%{}] -> :ok
+  # Creates a %Quote{} for each quote param given
+  def create_new_quotes(quotes_params) when is_list(quotes_params) do
+    Enum.each(quotes_params, fn coin -> get_quote_info(coin) |> create_new_quote end)
+  end
+
+  # map -> {:ok, %Quote{}} || {:error, %Changeset{}}
+  # Creates a new quote from the map params given
   def create_new_quote(%{"coinmarketcap_id" => id} = quote_params) do
     coin = Repo.get_by(Coin, coinmarketcap_id: id)
     quote_params = Map.put(quote_params, "coin_id", coin.id)
@@ -470,5 +499,101 @@ defmodule Hodl.Portfolio do
   """
   def change_quote(%Quote{} = quote, attrs \\ %{}) do
     Quote.changeset(quote, attrs)
+  end
+
+  alias Hodl.Portfolio.Ranking
+
+  @doc """
+  Returns the list of rankings.
+
+  ## Examples
+
+      iex> list_rankings()
+      [%Ranking{}, ...]
+
+  """
+  def list_rankings do
+    Repo.all(Ranking)
+  end
+
+  @doc """
+  Gets a single ranking.
+
+  Raises `Ecto.NoResultsError` if the Ranking does not exist.
+
+  ## Examples
+
+      iex> get_ranking!(123)
+      %Ranking{}
+
+      iex> get_ranking!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_ranking!(id), do: Repo.get!(Ranking, id)
+
+  @doc """
+  Creates a ranking.
+
+  ## Examples
+
+      iex> create_ranking(%{field: value})
+      {:ok, %Ranking{}}
+
+      iex> create_ranking(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_ranking(attrs \\ %{}) do
+    %Ranking{}
+    |> Ranking.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a ranking.
+
+  ## Examples
+
+      iex> update_ranking(ranking, %{field: new_value})
+      {:ok, %Ranking{}}
+
+      iex> update_ranking(ranking, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_ranking(%Ranking{} = ranking, attrs) do
+    ranking
+    |> Ranking.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a ranking.
+
+  ## Examples
+
+      iex> delete_ranking(ranking)
+      {:ok, %Ranking{}}
+
+      iex> delete_ranking(ranking)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_ranking(%Ranking{} = ranking) do
+    Repo.delete(ranking)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking ranking changes.
+
+  ## Examples
+
+      iex> change_ranking(ranking)
+      %Ecto.Changeset{data: %Ranking{}}
+
+  """
+  def change_ranking(%Ranking{} = ranking, attrs \\ %{}) do
+    Ranking.changeset(ranking, attrs)
   end
 end
