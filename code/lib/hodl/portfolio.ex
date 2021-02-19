@@ -598,6 +598,16 @@ defmodule Hodl.Portfolio do
     end)
   end
 
+  def get_ranking_coins(%Ranking{} = ranking) do
+    query = from c in Coin,
+    inner_join: cr in Coinrank,
+    on: c.id == cr.coin_id,
+    where: cr.ranking_id == ^ranking.id,
+    order_by: cr.position,
+    select: c
+    Repo.all(query)
+  end
+
   @doc """
   Deletes a ranking.
 
