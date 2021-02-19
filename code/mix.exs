@@ -47,7 +47,9 @@ defmodule Hodl.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:pow, "~> 1.0.22"},
       {:ecto_shortuuid, "~> 0.1.3"},
-      {:httpoison, "~> 1.8"}
+      {:httpoison, "~> 1.8"},
+      {:oban, "~> 2.4"},
+      {:ecto_autoslug_field, "~> 2.0"}
     ]
   end
 

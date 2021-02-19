@@ -14,9 +14,10 @@ defmodule Hodl.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Hodl.PubSub},
       # Start the Endpoint (http/https)
-      HodlWeb.Endpoint
+      HodlWeb.Endpoint,
       # Start a worker by calling: Hodl.Worker.start_link(arg)
       # {Hodl.Worker, arg}
+      {Oban, oban_config()}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -30,5 +31,9 @@ defmodule Hodl.Application do
   def config_change(changed, _new, removed) do
     HodlWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_config do
+    Application.get_env(:hodl, Oban)
   end
 end
