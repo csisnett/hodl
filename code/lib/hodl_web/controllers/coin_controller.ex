@@ -31,6 +31,11 @@ defmodule HodlWeb.CoinController do
     render(conn, "show.html", coin: coin)
   end
 
+  def top_coins(conn, %{}) do
+    coins = Portfolio.get_top_coins_quotes()
+    json(conn, %{"coins" => coins})
+  end
+
   def edit(conn, %{"id" => id}) do
     coin = Portfolio.get_coin!(id)
     changeset = Portfolio.change_coin(coin)

@@ -608,6 +608,26 @@ defmodule Hodl.Portfolio do
     Repo.all(query)
   end
 
+  def get_top_coins_quotes() do
+    ranking = Portfolio.get_ranking!(1)
+    coins = get_ranking_coins(ranking)
+    coins_quotes = Enum.map(coins, fn coin -> Map.put(coin, :price_usd, last_quote(coin))end)
+  end
+
+  def last_quote(%Coin{} = coin) do
+    query = from q in Quote,
+    where: q.coin_id == ^coin.id,
+    order_by: [desc: q.inserted_at],
+    limit: 1,
+    select: q.price_usd
+    Repo.one(query)
+  end
+
+  def get_top_coins() do
+    ranking = Portfolio.get_ranking!(1)
+    get_ranking_coins(ranking)
+  end
+
   @doc """
   Deletes a ranking.
 

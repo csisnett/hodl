@@ -12,6 +12,10 @@ defmodule HodlWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
   end
 
   pipeline :protected do
@@ -30,6 +34,12 @@ defmodule HodlWeb.Router do
 
     get "/", PageController, :index
     get "/new-hodl", PageController, :calculator
+  end
+
+  scope "/", HodlWeb do
+    pipe_through [:api]
+
+    get "/top-coins", CoinController, :top_coins
   end
 
   # Other scopes may use custom stacks.

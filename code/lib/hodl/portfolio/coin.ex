@@ -8,6 +8,7 @@ defmodule Hodl.Portfolio.Coin do
   #https://elixirforum.com/t/ecto-schema-and-access-behaviour/12995/3
   #https://hexdocs.pm/elixir/Access.html#module-implementing-the-access-behaviour-for-custom-data-structures
   
+  @derive {Jason.Encoder, only: [:name, :symbol, :uuid, :price_usd]}
   schema "coins" do
     field :name, :string
     field :symbol, :string
@@ -15,6 +16,7 @@ defmodule Hodl.Portfolio.Coin do
     field :coinmarketcap_id, :integer
     belongs_to :platform, Coin
     field :token_address, :string
+    field :price_usd, :decimal, virtual: true
     timestamps()
   end
 

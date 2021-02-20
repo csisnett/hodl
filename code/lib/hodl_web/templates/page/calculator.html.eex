@@ -65,4 +65,21 @@ var app = new Vue(
         }
     }
 );
+
+function get_top_coins(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", "/top-coins", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+      if (xhr.status == "200") {
+        console.log("Pause successfully saved")
+      } else {
+        console.log("Pause wasn't successful!")
+        }
+      }
+      xhr.send(json);
+}
 </script>
