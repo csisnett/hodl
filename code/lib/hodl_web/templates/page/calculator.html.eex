@@ -23,7 +23,9 @@
 var app = new Vue(
     {
         el: '#app_basic',
-        data: {
+        data: function(){
+           
+            return {
             selected: null,
             amount: "",
             fields: ["coins_available", "price_per_coin"],
@@ -33,18 +35,17 @@ var app = new Vue(
                 {}
             ],
             sell_percentage: 0.2,
-            options: [
-                {value: null, text: "Select a coin to hodl"},
-                {value: "Bitcoin", text: "Bitcoin"},
-                {value: "Dogecoin", text: "Dogecoin"},
-                {value: "Ethereum", text: "Ethereum"}
-                ]
+            options: false
+            }
+        },
+        created: function (){
+            get_top_coins();
         },
         computed: {
             table_items: function() {
                 let cycles = this.create_cycles(this.amount, price_per_coin = 0.2)
                 return cycles;
-            }
+                            }
         },
         methods: {
             create_cycles: function(initial_coin_amount, price_per_coin) {
@@ -59,9 +60,6 @@ var app = new Vue(
                 }
                 return cycles
             }
-
-            
-            
         }
     }
 );
@@ -74,10 +72,17 @@ function get_top_coins(){
       xhr.onload = function () {
 	    let response = JSON.parse(xhr.responseText);
         console.log(response)
+        for (i = 0; i < 100; i++){
+            response.coins[i]["text"] = response.coins[i]["name"]
+            response.coins[i]["value"] = response.coins[i]["uuid"]
+        }
+
       if (xhr.status == "200") {
-        console.log("Pause successfully saved")
+        console.log("Got coins! wow")
+        app.options =  response.coins;
+
       } else {
-        console.log("Pause wasn't successful!")
+        console.log("No coins :(")
         }
       }
       xhr.send(json);
