@@ -7,9 +7,9 @@
 
 <template v-if="selected">
 <br>
-<p> What amount of {{selected}} do you own? </p>
+<p> How much {{options[selected].name}} do you own? </p>
 <b-form-input v-model="amount"> </b-form-input>
-{{amount}} {{selected}}
+{{amount}} {{options[selected].symbol}}
 
 <template v-if="amount">
 <b-table :items="table_items" :fields="fields">
@@ -28,7 +28,7 @@ var app = new Vue(
             return {
             selected: null,
             amount: "",
-            fields: ["coins_available", "price_per_coin"],
+            fields: ["coins_available_after_sell", "sell_percentage", "amount_to_sell", "price_per_coin", "gains_after_sell", "accumulated_gains_so_far", "paper_net_worth"],
             items: [
                 {},
                 {},
@@ -43,20 +43,43 @@ var app = new Vue(
         },
         computed: {
             table_items: function() {
-                let cycles = this.create_cycles(this.amount, price_per_coin = 0.2)
+                let cycles = this.create_cycles(this.amount, this.coin_price)
                 return cycles;
-                            }
+                            },
+            coin_price: function(){
+                let i = this.selected;
+                return this.options[i]["price_usd"]
+            }
         },
         methods: {
             create_cycles: function(initial_coin_amount, price_per_coin) {
+                price_per_coin = math.round(price_per_coin,2)
                 let cycles = []
-                cycles.push({coins_available: initial_coin_amount, price_per_coin: price_per_coin})
+                let paper = math.chain(initial_coin_amount).multiply(price_per_coin).round(2).done()
+                paper_str = paper.toLocaleString()
+                cycles.push({coins_available_after_sell: initial_coin_amount, sell_percentage: 0, amount_to_sell: 0, price_per_coin: price_per_coin.toLocaleString(), gains_after_sell: 0, accumulated_gains_so_far: 0, paper_net_worth: paper_str})
+                price_per_coin = math.chain(price_per_coin).multiply(10).round(2).done()
+                paper = math.chain(initial_coin_amount).multiply(price_per_coin).round(2).done()
+                paper_str = paper.toLocaleString()
+                cycles.push({coins_available_after_sell: initial_coin_amount, sell_percentage: 0, amount_to_sell: 0, price_per_coin: price_per_coin.toLocaleString(), gains_after_sell: 0, accumulated_gains_so_far: 0, paper_net_worth: paper_str})
+
                 let coin_amount = initial_coin_amount
                 let new_price_per_coin = price_per_coin
+                let coins_to_sell;
+                let accumulated_gains = 0;
+                let gains_on_this_cycle;
                 for (i = 1; i < 4; i++){
-                    coin_amount = math.evaluate(0.8 * coin_amount)
-                    new_price_per_coin = 10 * new_price_per_coin
-                    cycles.push({coins_available: coin_amount, price_per_coin: new_price_per_coin})
+                    coins_to_sell = math.evaluate(coin_amount * this.sell_percentage)
+                    new_price_per_coin = math.chain(10).multiply(new_price_per_coin).round(2).done()
+                    gains_on_this_cycle = math.chain(coins_to_sell).multiply(new_price_per_coin).round(2).done();
+                    accumulated_gains = math.chain(accumulated_gains).add(gains_on_this_cycle).round(2).done();
+                    accumulated_gains_str = accumulated_gains.toLocaleString();
+                    gains_on_this_cycle_str = gains_on_this_cycle.toLocaleString()
+                    coin_amount = math.evaluate(coin_amount - coins_to_sell)
+                    paper = math.chain(coin_amount).multiply(new_price_per_coin).add(accumulated_gains).round(2).done()
+                    paper = paper.toLocaleString()
+                    let price_per_coin_str = new_price_per_coin.toLocaleString()
+                    cycles.push({coins_available_after_sell: coin_amount, sell_percentage: this.sell_percentage, amount_to_sell: coins_to_sell, price_per_coin: price_per_coin_str, gains_after_sell: gains_on_this_cycle_str, accumulated_gains_so_far: accumulated_gains_str, paper_net_worth: paper})
                 }
                 return cycles
             }
@@ -72,14 +95,16 @@ function get_top_coins(){
       xhr.onload = function () {
 	    let response = JSON.parse(xhr.responseText);
         console.log(response)
-        for (i = 0; i < 100; i++){
-            response.coins[i]["text"] = response.coins[i]["name"]
-            response.coins[i]["value"] = response.coins[i]["uuid"]
+        let arr = [{value: null, text: "Select a coin to hodl"}]
+        let coins = arr.concat(response.coins)
+        for (i = 1; i < 101; i++){
+            coins[i]["text"] = coins[i]["name"]
+            coins[i]["value"] = i
         }
 
       if (xhr.status == "200") {
         console.log("Got coins! wow")
-        app.options =  response.coins;
+        app.options =  coins;
 
       } else {
         console.log("No coins :(")
