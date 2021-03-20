@@ -7,6 +7,9 @@ defmodule Hodl.Portfolio do
   alias Hodl.Repo
   alias Hodl.Portfolio
   alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking}
+  alias Hodl.Users.User
+
+  def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
   Returns the list of coins.
@@ -36,6 +39,8 @@ defmodule Hodl.Portfolio do
 
   """
   def get_coin!(id), do: Repo.get!(Coin, id)
+
+  def get_coin_by_uuid(uuid), do: Repo.get_by(Coin, uuid: uuid)
 
   @doc """
   Creates a coin.
@@ -158,6 +163,58 @@ defmodule Hodl.Portfolio do
     |> Repo.insert()
   end
 
+  def create_hodlschedule!(attrs \\ %{}) do
+    %Hodlschedule{}
+    |> Hodlschedule.changeset(attrs)
+    |> Repo.insert!()
+  end
+
+  def test_hodl_schedule() do
+    attrs = %{"coin_uuid" => "ufbF6ASdoJRViWysbhp6m4", "cycles" => [%{"amount_of_coin" => 10, "price_per_coin" => 20.21}, %{"amount_of_coin" => 5, "price_per_coin" => 202.1}]}
+    user = get_user!(1)
+    create_hodlschedule(attrs, user)
+  end
+
+  # %{"coin_uuid", => "askfmlsamfsa", "cycles" => [%{"amount_of_coin" => 2, "price_per_coin" => 20.23}, ...]}, %User{} -> {:ok, %Hodlschedule{}} || Raises error
+  def create_hodlschedule(%{} = attrs, %User{} = user) do
+    coin = get_coin_by_uuid(attrs["coin_uuid"])
+    hodlschedule_attrs = %{"coin_id" => coin.id, "user_id" => user.id}
+    cycles = attrs["cycles"] |> Enum.reverse()
+    Repo.transaction(fn ->
+      hodlschedule = create_hodlschedule!(hodlschedule_attrs)
+      create_cycles!(cycles, hodlschedule, [])
+    end)
+  end
+
+  #[%{"price_per_coin", "amount_per_coin", }], Hodlschedule, [] -> [%Cycle{}, ...]
+  # Receives a list of cycle attrs and creates the respective cycles
+  # About
+  #The cycles are received from last to first order. 
+  #They're created in that order as well in order to have the next_cycle_id
+  def create_cycles!(cycles, %Hodlschedule{} = hodlschedule, result) do
+    [current_attrs | rest] = cycles
+
+    current_attrs = case length(cycles) do
+      1 -> current_attrs = Map.put(current_attrs, "first?", true)
+      n -> current_attrs = Map.put(current_attrs, "first?", false)
+    end
+
+    current_cycle = create_cycle!(current_attrs,hodlschedule)
+    result = result ++ [current_cycle]
+    case length(rest) do
+      0 -> result |> Enum.reverse()
+      n -> 
+        [parent_attrs | others] = rest
+        parent_attrs = parent_attrs |> Map.put("next_cycle_id", current_cycle.id)
+        create_cycles!( [parent_attrs | others], hodlschedule, result)
+    end 
+  end
+
+  def create_cycle!(%{} = attrs, %Hodlschedule{} = hodlschedule) do
+    attrs = Map.put(attrs, "hodlschedule_id", hodlschedule.id)
+    create_cycle!(attrs)
+  end
+
   @doc """
   Updates a hodlschedule.
 
@@ -250,6 +307,12 @@ defmodule Hodl.Portfolio do
     %Cycle{}
     |> Cycle.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_cycle!(attrs \\ %{}) do
+    %Cycle{}
+    |> Cycle.changeset(attrs)
+    |> Repo.insert!()
   end
 
   @doc """
