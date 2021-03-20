@@ -35,7 +35,8 @@ var app = new Vue(
                 {}
             ],
             sell_percentage: 0.2,
-            options: false
+            options: false,
+            store_cycles: []
             }
         },
         created: function (){
@@ -52,6 +53,31 @@ var app = new Vue(
             }
         },
         methods: {
+            create_cycle: function(coin_amount, price_per_coin, sell_percentage, accumulated_gains) {
+                price_per_coin = math.round(price_per_coin,2)
+                let coin_worth = math.chain(coin_amount).multiply(price_per_coin).round(2).done()
+                let paper_net_worth = math.chain(coin_worth).add(accumulated_gains).round(2).done()
+                paper_str = paper.toLocaleString()
+                let coins_to_sell = math.evaluate(coin_amount * sell_percentage)
+                let coins_after_sell = math.evaluate(coin_amount - coins_to_sell)
+                let gains_for_sale = math.chain(coins_to_sell).multiply(new_price_per_coin).round(2).done();
+                let accumulated_gains_so_far = math.chain(accumulated_gains).add(gains_for_sale).round(2).done();
+
+                let price_per_coin_str = price_per_coin.toLocaleString()
+                let gains_for_sale_str = gains_for_sale.toLocaleString()
+                let accumulated_gains_so_far_str = accumulated_gains_so_far.toLocaleString()
+
+                let cycle = {
+                        coins_available_after_sell: coins_after_sell,
+                        sell_percentage: sell_percentage,
+                        amount_to_sell: coins_to_sell,
+                        price_per_coin: price_per_coin_str,
+                        gains_after_sell: gains_for_sale_str,
+                        accumulated_gains_so_far: accumulated_gains_so_far_str,
+                        paper_net_worth: paper_net_worth
+                    }
+                return(cycle);
+            },
             create_cycles: function(initial_coin_amount, price_per_coin) {
                 price_per_coin = math.round(price_per_coin,2)
                 let cycles = []
@@ -79,8 +105,18 @@ var app = new Vue(
                     paper = math.chain(coin_amount).multiply(new_price_per_coin).add(accumulated_gains).round(2).done()
                     paper = paper.toLocaleString()
                     let price_per_coin_str = new_price_per_coin.toLocaleString()
-                    cycles.push({coins_available_after_sell: coin_amount, sell_percentage: this.sell_percentage, amount_to_sell: coins_to_sell, price_per_coin: price_per_coin_str, gains_after_sell: gains_on_this_cycle_str, accumulated_gains_so_far: accumulated_gains_str, paper_net_worth: paper})
+                    let data = {
+                        coins_available_after_sell: coin_amount,
+                        sell_percentage: this.sell_percentage,
+                        amount_to_sell: coins_to_sell,
+                        price_per_coin: price_per_coin_str,
+                        gains_after_sell: gains_on_this_cycle_str,
+                        accumulated_gains_so_far: accumulated_gains_str,
+                        paper_net_worth: paper
+                    }
+                    cycles.push(data)
                 }
+                this.store_cycles = cycles;
                 return cycles
             }
         }
@@ -108,6 +144,32 @@ function get_top_coins(){
 
       } else {
         console.log("No coins :(")
+        }
+      }
+      xhr.send(json);
+}
+
+function create_schedule(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("POST", "/top-coins", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+        let arr = [{value: null, text: "Select a coin to hodl"}]
+        let coins = arr.concat(response.coins)
+        for (i = 1; i < 101; i++){
+            coins[i]["text"] = coins[i]["name"]
+            coins[i]["value"] = i
+        }
+
+      if (xhr.status == "200") {
+        console.log("Got coins! wow")
+        app.options =  coins;
+
+      } else {
+        console.log("The schedule wasnt created :(")
         }
       }
       xhr.send(json);
