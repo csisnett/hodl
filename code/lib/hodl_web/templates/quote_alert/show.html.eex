@@ -1,0 +1,13 @@
+<h1>Show Quote alert</h1>
+
+<ul>
+
+  <li>
+    <strong>Price usd:</strong>
+    <%= @quote_alert.price_usd %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.quote_alert_path(@conn, :edit, @quote_alert) %></span>
+<span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>

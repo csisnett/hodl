@@ -358,4 +358,63 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_coinrank(coinrank)
     end
   end
+
+  describe "quotealerts" do
+    alias Hodl.Portfolio.QuoteAlert
+
+    @valid_attrs %{price_usd: "120.5"}
+    @update_attrs %{price_usd: "456.7"}
+    @invalid_attrs %{price_usd: nil}
+
+    def quote_alert_fixture(attrs \\ %{}) do
+      {:ok, quote_alert} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_quote_alert()
+
+      quote_alert
+    end
+
+    test "list_quotealerts/0 returns all quotealerts" do
+      quote_alert = quote_alert_fixture()
+      assert Portfolio.list_quotealerts() == [quote_alert]
+    end
+
+    test "get_quote_alert!/1 returns the quote_alert with given id" do
+      quote_alert = quote_alert_fixture()
+      assert Portfolio.get_quote_alert!(quote_alert.id) == quote_alert
+    end
+
+    test "create_quote_alert/1 with valid data creates a quote_alert" do
+      assert {:ok, %QuoteAlert{} = quote_alert} = Portfolio.create_quote_alert(@valid_attrs)
+      assert quote_alert.price_usd == Decimal.new("120.5")
+    end
+
+    test "create_quote_alert/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_quote_alert(@invalid_attrs)
+    end
+
+    test "update_quote_alert/2 with valid data updates the quote_alert" do
+      quote_alert = quote_alert_fixture()
+      assert {:ok, %QuoteAlert{} = quote_alert} = Portfolio.update_quote_alert(quote_alert, @update_attrs)
+      assert quote_alert.price_usd == Decimal.new("456.7")
+    end
+
+    test "update_quote_alert/2 with invalid data returns error changeset" do
+      quote_alert = quote_alert_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_quote_alert(quote_alert, @invalid_attrs)
+      assert quote_alert == Portfolio.get_quote_alert!(quote_alert.id)
+    end
+
+    test "delete_quote_alert/1 deletes the quote_alert" do
+      quote_alert = quote_alert_fixture()
+      assert {:ok, %QuoteAlert{}} = Portfolio.delete_quote_alert(quote_alert)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_quote_alert!(quote_alert.id) end
+    end
+
+    test "change_quote_alert/1 returns a quote_alert changeset" do
+      quote_alert = quote_alert_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_quote_alert(quote_alert)
+    end
+  end
 end

@@ -1,0 +1,26 @@
+<h1>Listing Quotealerts</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Price usd</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for quote_alert <- @quotealerts do %>
+    <tr>
+      <td><%= quote_alert.price_usd %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.quote_alert_path(@conn, :show, quote_alert) %></span>
+        <span><%= link "Edit", to: Routes.quote_alert_path(@conn, :edit, quote_alert) %></span>
+        <span><%= link "Delete", to: Routes.quote_alert_path(@conn, :delete, quote_alert), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Quote alert", to: Routes.quote_alert_path(@conn, :new) %></span>

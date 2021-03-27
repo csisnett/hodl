@@ -1,0 +1,5 @@
+<h1>Edit Quote alert</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.quote_alert_path(@conn, :update, @quote_alert)) %>
+
+<span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>

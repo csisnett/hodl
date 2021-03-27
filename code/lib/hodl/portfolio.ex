@@ -813,4 +813,100 @@ defmodule Hodl.Portfolio do
   def change_coinrank(%Coinrank{} = coinrank, attrs \\ %{}) do
     Coinrank.changeset(coinrank, attrs)
   end
+
+  alias Hodl.Portfolio.QuoteAlert
+
+  @doc """
+  Returns the list of quotealerts.
+
+  ## Examples
+
+      iex> list_quotealerts()
+      [%QuoteAlert{}, ...]
+
+  """
+  def list_quotealerts do
+    Repo.all(QuoteAlert)
+  end
+
+  @doc """
+  Gets a single quote_alert.
+
+  Raises `Ecto.NoResultsError` if the Quote alert does not exist.
+
+  ## Examples
+
+      iex> get_quote_alert!(123)
+      %QuoteAlert{}
+
+      iex> get_quote_alert!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_quote_alert!(id), do: Repo.get!(QuoteAlert, id)
+
+  @doc """
+  Creates a quote_alert.
+
+  ## Examples
+
+      iex> create_quote_alert(%{field: value})
+      {:ok, %QuoteAlert{}}
+
+      iex> create_quote_alert(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_quote_alert(attrs \\ %{}) do
+    %QuoteAlert{}
+    |> QuoteAlert.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a quote_alert.
+
+  ## Examples
+
+      iex> update_quote_alert(quote_alert, %{field: new_value})
+      {:ok, %QuoteAlert{}}
+
+      iex> update_quote_alert(quote_alert, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_quote_alert(%QuoteAlert{} = quote_alert, attrs) do
+    quote_alert
+    |> QuoteAlert.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a quote_alert.
+
+  ## Examples
+
+      iex> delete_quote_alert(quote_alert)
+      {:ok, %QuoteAlert{}}
+
+      iex> delete_quote_alert(quote_alert)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_quote_alert(%QuoteAlert{} = quote_alert) do
+    Repo.delete(quote_alert)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking quote_alert changes.
+
+  ## Examples
+
+      iex> change_quote_alert(quote_alert)
+      %Ecto.Changeset{data: %QuoteAlert{}}
+
+  """
+  def change_quote_alert(%QuoteAlert{} = quote_alert, attrs \\ %{}) do
+    QuoteAlert.changeset(quote_alert, attrs)
+  end
 end
