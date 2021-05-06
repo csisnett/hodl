@@ -6,7 +6,7 @@ defmodule Hodl.Repo.Migrations.CreateQuotealerts do
       add :uuid, :uuid, null: false
       add :price_usd, :decimal, null: false
       add :email, :string
-      add :status, :boolean, null: false
+      add :active?, :boolean, null: false
       add :comparator, :string, null: false
 
       add :user_id, references(:users, on_delete: :delete_all), null: false
