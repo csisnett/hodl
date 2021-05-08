@@ -186,7 +186,7 @@ defmodule Hodl.Portfolio do
     end)
   end
 
-  #[%{"price_per_coin", "amount_per_coin", }], Hodlschedule, [] -> [%Cycle{}, ...]
+  #[%{"price_per_coin", "amount_per_coin", "sale_percentage" }], Hodlschedule, [] -> [%Cycle{}, ...]
   # Receives a list of cycle attrs and creates the respective cycles
   # About
   #The cycles are received from last to first order. 
@@ -863,6 +863,14 @@ defmodule Hodl.Portfolio do
     |> Repo.insert()
   end
 
+  def create_quote_alert(%{} = attrs, %User{id: id} = user) do
+    coin = get_coin_by_uuid(attrs["coin_uuid"])
+    attrs 
+    |> Map.put("coin_id", coin.id)
+    |> Map.put("user_id", id)
+    |> create_quote_alert()
+  end
+
   @doc """
   Updates a quote_alert.
 
@@ -908,5 +916,15 @@ defmodule Hodl.Portfolio do
   """
   def change_quote_alert(%QuoteAlert{} = quote_alert, attrs \\ %{}) do
     QuoteAlert.changeset(quote_alert, attrs)
+  end
+
+  # Gets the Bitcoin %Coin{}
+  def get_test_coin() do
+    Repo.get_by(Coin, coinmarketcap_id: 1)
+  end
+
+  # Gets my %User{}
+  def get_test_user() do
+    Repo.get_by(User, id: 1)
   end
 end

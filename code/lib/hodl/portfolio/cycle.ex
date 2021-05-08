@@ -8,6 +8,7 @@ defmodule Hodl.Portfolio.Cycle do
     field :amount_of_coin, :decimal
     field :uuid, Ecto.ShortUUID, autogenerate: true
     field :first?, :boolean, default: false
+    field :sale_percentage, :decimal
 
     belongs_to :next_cycle, Cycle
     belongs_to :hodlschedule, HodlSchedule
@@ -17,8 +18,8 @@ defmodule Hodl.Portfolio.Cycle do
   @doc false
   def changeset(cycle, attrs) do
     cycle
-    |> cast(attrs, [:price_per_coin, :amount_of_coin, :first?, :hodlschedule_id, :next_cycle_id])
-    |> validate_required([:price_per_coin, :amount_of_coin, :first?, :hodlschedule_id])
+    |> cast(attrs, [:price_per_coin, :amount_of_coin, :first?, :sale_percentage, :hodlschedule_id, :next_cycle_id])
+    |> validate_required([:price_per_coin, :amount_of_coin, :first?, :sale_percentage, :hodlschedule_id])
     |> foreign_key_constraint(:hodlschedule_id)
     |> foreign_key_constraint(:next_cycle_id)
   end
