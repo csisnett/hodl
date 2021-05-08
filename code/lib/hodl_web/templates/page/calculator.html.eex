@@ -55,6 +55,7 @@ var app = new Vue(
         methods: {
             create_cycle: function(coin_amount, price_per_coin, sell_percentage, accumulated_gains) {
                 
+                let sell_percetange_str = math.chain(sell_percentage).multiply(100).done() + "%"
                 let coin_worth = math.chain(coin_amount).multiply(price_per_coin).round(2).done()
                 let paper_net_worth = math.chain(coin_worth).add(accumulated_gains).round(2).done()
                 
@@ -69,11 +70,16 @@ var app = new Vue(
                 let accumulated_gains_so_far_str = accumulated_gains_so_far.toLocaleString()
 
                 let cycle = {
+                        coin_amount: coin_amount,
                         coins_available_after_sell: coins_after_sell,
-                        sell_percentage: sell_percentage,
+                        sell_percentage_num: sell_percentage,
+                        sell_percentage: sell_percetange_str, 
                         amount_to_sell: coins_to_sell,
+                        price_per_coin_num: price_per_coin,
                         price_per_coin: price_per_coin_str,
+                        gains_after_sell_num: gains_for_sale,
                         gains_after_sell: gains_for_sale_str,
+                        accumulated_gains_so_far_num: accumulated_gains_so_far,
                         accumulated_gains_so_far: accumulated_gains_so_far_str,
                         paper_net_worth: paper_net_worth_str
                     }
@@ -97,26 +103,13 @@ var app = new Vue(
                 let accumulated_gains = 0;
                 let gains_on_this_cycle;
                 for (i = 1; i < 4; i++){
-                    coins_to_sell = math.evaluate(coin_amount * this.sell_percentage)
+                    let new_cycle = this.create_cycle(coin_amount, new_price_per_coin, this.sell_percentage, accumulated_gains)
+                    cycles.push(new_cycle)
+                    coin_amount = new_cycle.coins_available_after_sell
+                    accumulated_gains = new_cycle.accumulated_gains_so_far_num
+
                     new_price_per_coin = math.chain(10).multiply(new_price_per_coin).round(2).done()
-                    gains_on_this_cycle = math.chain(coins_to_sell).multiply(new_price_per_coin).round(2).done();
-                    accumulated_gains = math.chain(accumulated_gains).add(gains_on_this_cycle).round(2).done();
-                    accumulated_gains_str = accumulated_gains.toLocaleString();
-                    gains_on_this_cycle_str = gains_on_this_cycle.toLocaleString()
-                    coin_amount = math.evaluate(coin_amount - coins_to_sell)
-                    paper = math.chain(coin_amount).multiply(new_price_per_coin).add(accumulated_gains).round(2).done()
-                    paper = paper.toLocaleString()
-                    let price_per_coin_str = new_price_per_coin.toLocaleString()
-                    let data = {
-                        coins_available_after_sell: coin_amount,
-                        sell_percentage: this.sell_percentage,
-                        amount_to_sell: coins_to_sell,
-                        price_per_coin: price_per_coin_str,
-                        gains_after_sell: gains_on_this_cycle_str,
-                        accumulated_gains_so_far: accumulated_gains_str,
-                        paper_net_worth: paper
-                    }
-                    cycles.push(data)
+                    
                 }
                 this.cycle_store = cycles;
                 return cycles
