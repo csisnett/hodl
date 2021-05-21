@@ -42,6 +42,7 @@ defmodule HodlWeb.Router do
     get "/top-coins", CoinController, :top_coins
     post "/create-hodl", HodlscheduleController, :create
     get "/all-hodl", HodlscheduleController, :index
+    get "/username-suggestion", PageController, :random_username
   end
 
   # Other scopes may use custom stacks.

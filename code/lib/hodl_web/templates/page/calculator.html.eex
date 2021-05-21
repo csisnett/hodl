@@ -178,4 +178,25 @@ function get_top_coins(){
       
   }
 
+
+function get_random_username(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", "/username-suggestion", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+        
+      if (xhr.status == "200") {
+        console.log("Got username! wow")
+        
+
+      } else {
+        console.log("No username :(")
+        }
+      }
+      xhr.send(json);
+}
+
 </script>
