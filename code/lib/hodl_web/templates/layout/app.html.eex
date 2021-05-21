@@ -25,11 +25,46 @@
   </head>
   <body>
     <header>
+  <script>
+
+    /* Toggle between adding and removing the "responsive" class to topnav when the user clicks on the icon */
+function myFunction() {
+  var x = document.getElementById("myTopnav");
+  if (x.className === "topnav") {
+    x.className += " responsive";
+  } else {
+    x.className = "topnav";
+  }
+}
+    </script>
       <section class="">
-            <a href="/">
-            <img src= "<%= Routes.static_path(@conn, "/images/hodl.png") %>" alt="howtohodl.org logo"> 
-            </a>
-      </section>
+        <nav role="navigation">
+          <div class="topnav" id="myTopnav">
+  
+ 
+   <a href="/why-hodl"> Why hodl? </a>
+  <a href="<%= Routes.page_path(@conn, :calculator) %>" class="">Create a hodl schedule</a>
+  <a href="/new-price-alert"> Set a new price alert </a>
+  <a href="/plans"> Plans </a>
+  <%= if Pow.Plug.current_user(@conn) do %>
+  <% else %>
+  <a href="<%= Routes.pow_registration_path(@conn, :new) %>" class="">Sign up</a>
+  <a href="<%= Routes.pow_session_path(@conn, :new) %>" class="">Login</a>
+  <% end %>
+  
+  <%= if Pow.Plug.current_user(@conn) do %>
+  
+  <span><%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete %></span>
+  <% end %>
+  <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+    <i class="fa fa-bars"></i>
+  </a>
+</div>
+        </nav>
+        <a href="https://pelable.com/" class="">
+          <img src="<%= Routes.static_path(@conn, "/images/hodl.png") %>" alt="Pelable Logo"/>
+        </a>
+        </section>
     </header>
     <main role="main" class="container">
       <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
