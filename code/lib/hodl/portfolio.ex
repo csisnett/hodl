@@ -145,6 +145,14 @@ defmodule Hodl.Portfolio do
   """
   def get_hodlschedule!(id), do: Repo.get!(Hodlschedule, id)
 
+  def get_hodlschedule_cycles(%Hodlschedule{} = schedule) do
+    query = from c in Cycle, 
+    where: c.hodlschedule_id == ^schedule.id,
+    order_by: [desc: c.id],
+    select: c
+    Repo.all(query)
+  end
+
   @doc """
   Creates a hodlschedule.
 
@@ -170,7 +178,8 @@ defmodule Hodl.Portfolio do
   end
 
   def test_hodl_schedule() do
-    attrs = %{"coin_uuid" => "ufbF6ASdoJRViWysbhp6m4", "cycles" => [%{"amount_of_coin" => 10, "price_per_coin" => 20.21}, %{"amount_of_coin" => 5, "price_per_coin" => 202.1}]}
+    attrs = %{"coin_uuid" => "ufbF6ASdoJRViWysbhp6m4", "cycles" => [%{"amount_of_coin" => 10, "price_per_coin" => 20.21, "sale_percentage" => 0.2},
+     %{"amount_of_coin" => 5, "price_per_coin" => 202.1, "sale_percentage" => 0.2}]}
     user = get_user!(1)
     create_hodlschedule(attrs, user)
   end

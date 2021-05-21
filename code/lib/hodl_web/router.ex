@@ -40,6 +40,8 @@ defmodule HodlWeb.Router do
     pipe_through [:api]
 
     get "/top-coins", CoinController, :top_coins
+    post "/create-hodl", HodlscheduleController, :create
+    get "/all-hodl", HodlscheduleController, :index
   end
 
   # Other scopes may use custom stacks.
