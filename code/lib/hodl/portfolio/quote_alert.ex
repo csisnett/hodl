@@ -16,11 +16,20 @@ defmodule Hodl.Portfolio.QuoteAlert do
     timestamps()
   end
 
+  def validate_comparator(changeset) do
+    case get_field(changeset, :comparator) do
+      "above" -> changeset
+      "below" -> changeset
+      anything_else -> add_error(changeset, :comparator, "comparator field is neither 'above' or 'below'")
+    end
+  end
+
   @doc false
   def changeset(quote_alert, attrs) do
     quote_alert
     |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email])
     |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id])
+    |> validate_comparator()
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:coin_id)
   end
