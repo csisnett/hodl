@@ -981,15 +981,6 @@ defmodule Hodl.Portfolio do
     end
   end
 
-  def filter_quote_alerts(%Quote{} = _my_quote, [], result) do
-    result
-  end
-
-  def filter_quote_alerts(%Quote{} = myquote, quote_alerts, result) when is_list(quote_alerts) do
-    [first_quote_alert | t] = quote_alerts
-
-  end
-
   # Quote, [QuoteAlert{}] -> [QuoteAlert{}]
   # For the coin in Quote return all the respective Quote Alerts that need to go off
   # How it works: We filter the quote alerts for the current coin in Quote,
