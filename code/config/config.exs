@@ -32,8 +32,13 @@ config :hodl, :pow,
 
 config :hodl, Oban,
 repo: Hodl.Repo,
-plugins: [Oban.Plugins.Pruner],
-queues: [events: 3]
+plugins: [Oban.Plugins.Pruner,
+          {Oban.Plugins.Cron,
+          crontab: [
+            {"*/5 * * * *", Hodl.Portfolio.QuoteWorker, args: %{"name" => "get_top_quotes"}}
+          ]}
+          ],
+queues: [events: [limit: 3, paused: true]]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
