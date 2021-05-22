@@ -537,8 +537,8 @@ defmodule Hodl.Portfolio do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_quote(%Quote{} = quote, attrs) do
-    quote
+  def update_quote(%Quote{} = myquote, attrs) do
+    myquote
     |> Quote.changeset(attrs)
     |> Repo.update()
   end
@@ -555,8 +555,8 @@ defmodule Hodl.Portfolio do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_quote(%Quote{} = quote) do
-    Repo.delete(quote)
+  def delete_quote(%Quote{} = myquote) do
+    Repo.delete(myquote)
   end
 
   @doc """
@@ -568,8 +568,8 @@ defmodule Hodl.Portfolio do
       %Ecto.Changeset{data: %Quote{}}
 
   """
-  def change_quote(%Quote{} = quote, attrs \\ %{}) do
-    Quote.changeset(quote, attrs)
+  def change_quote(%Quote{} = myquote, attrs \\ %{}) do
+    Quote.changeset(myquote, attrs)
   end
 
   @doc """
@@ -935,5 +935,83 @@ defmodule Hodl.Portfolio do
   # Gets my %User{}
   def get_test_user() do
     Repo.get_by(User, id: 1)
+  end
+
+  def list_active_quote_alerts() do
+    query = from q in QuoteAlert,
+    where: q.active? == true,
+    select: q
+    Repo.all(query)
+  end
+
+  def get_first_quotes() do
+    query = from q in Quote,
+    where: q.coin_id == 11266,
+    select: q
+    Repo.all(query)
+  end
+
+  def get_first_quotealerts() do
+    query = from q in QuoteAlert,
+    where: q.coin_id == 11266,
+    select: q
+    Repo.all(query)
+  end
+
+  def get_second_quotealerts() do
+    query = from q in QuoteAlert,
+    where: q.coin_id == 11026,
+    select: q
+    Repo.all(query)
+  end
+
+  def get_second_quotes() do
+    query = from q in Quote,
+    where: q.coin_id == 11026,
+    select: q
+    Repo.all(query)
+  end
+
+  # Quote, QuoteAlert -> Boolean
+  # Returns true if the quote alert should go off, false if it shouldn't
+  def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id} = quote_alert) do
+    case quote_alert.comparator do
+      "above" -> myquote.price_usd >= quote_alert.price_usd
+      "below" -> myquote.price_usd < quote_alert.price_usd
+    end
+  end
+
+  def filter_quote_alerts(%Quote{} = _my_quote, [], result) do
+    result
+  end
+
+  def filter_quote_alerts(%Quote{} = myquote, quote_alerts, result) when is_list(quote_alerts) do
+    [first_quote_alert | t] = quote_alerts
+
+  end
+
+  # Quote, [QuoteAlert{}] -> [QuoteAlert{}]
+  # For the coin in Quote return all the respective Quote Alerts that need to go off
+  # How it works: We filter the quote alerts for the current coin in Quote,
+  # then we output the quote alerts if they need to go off
+  def quote_alerts_that_go_off_for_quote(%Quote{} = myquote, quote_alerts) when is_list(quote_alerts) do
+    relevant_quote_alerts = Enum.filter(quote_alerts, fn quote_alert -> quote_alert.coin_id == myquote.coin_id end)
+    Enum.filter(relevant_quote_alerts, fn quote_alert -> should_quote_alert_go_off?(myquote, quote_alert) end)
+  end
+
+  # [], (1)[QuoteAlert, ...], (2)[QuoteAlert] -> (2)[QuoteAlert]
+  def detect_alerts_to_set_off([], _active_quote_alerts, result) do
+    result
+  end
+
+
+  # [Quote{}, ...], [QuoteAlert{}, ...], [] -> [QuoteAlert{}, ...]
+  # Gets quotes of all relevant cryptos and active quote alerts and returns a list of the quote alerts that need to be set off
+  #active_quote_alerts = list_active_quote_alerts()
+  def detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, result) when is_list(incoming_quotes) do
+    [first_quote | rest] = incoming_quotes
+    quote_alerts_to_set_off = quote_alerts_that_go_off_for_quote(first_quote, active_quote_alerts)
+    result = result ++ quote_alerts_to_set_off
+    detect_alerts_to_set_off(rest, active_quote_alerts, result)
   end
 end
