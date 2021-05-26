@@ -48,8 +48,9 @@ defmodule Hodl.MixProject do
       {:pow, "~> 1.0.22"},
       {:ecto_shortuuid, "~> 0.1.3"},
       {:httpoison, "~> 1.8"},
-      {:oban, "~> 2.4"},
-      {:ecto_autoslug_field, "~> 2.0"}
+      {:oban, "~> 2.6"},
+      {:ecto_autoslug_field, "~> 2.0"},
+      {:quantum, "~> 3.3"}
     ]
   end
 

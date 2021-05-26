@@ -17,7 +17,8 @@ defmodule Hodl.Application do
       HodlWeb.Endpoint,
       # Start a worker by calling: Hodl.Worker.start_link(arg)
       # {Hodl.Worker, arg}
-      {Oban, oban_config()}
+      {Oban, oban_config()},
+      Hodl.Scheduler
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
