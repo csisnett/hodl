@@ -401,11 +401,11 @@ defmodule Hodl.Portfolio do
     Enum.map(data, fn crypto -> prepare_coin_for_creation(crypto)end)
   end
 
-  def prepare_coin_for_creation(%{} = crypto) do
-    crypto
-    |> Map.put(crypto, "coinmarketcap_id", crypto["id"])
-    |> Map.put(crypto, "external_platform_id", crypto["platform"]["id"])
-    |> Map.put(crypto, "token_address", crypto["platform"]["token_address"])
+  def prepare_coin_for_creation(%{} = coin) do
+    coin
+    |> Map.put("coinmarketcap_id", coin["id"])
+    |> Map.put("external_platform_id", coin["platform"]["id"])
+    |> Map.put("token_address", coin["platform"]["token_address"])
   end
 
   # Takes a list of coin params and creates the coins that are platforms only
@@ -431,11 +431,11 @@ defmodule Hodl.Portfolio do
     [first | rest] = coin_list
     coin = Repo.get_by(Coin, coinmarketcap_id: first["id"])
     case coin do
-    nil -> 
-      {:ok, coin} = create_coin(first)
-      create_coins(rest)
+      nil -> 
+        {:ok, coin} = create_coin(first)
+        create_coins(rest)
 
-    coin -> create_coins(rest)
+      coin -> create_coins(rest)
     end
   end
 
@@ -443,13 +443,20 @@ defmodule Hodl.Portfolio do
   # Puts the important info of the coin into the root map
   def get_quote_info(%{} = coin) do
     price = coin["quote"]["USD"]["price"]
-    coinmarketcap_id = coin["id"]
-    %{"price_usd" => price, "coinmarketcap_id" => coinmarketcap_id}
+    coin
+    |> Map.put("price_usd", price)
+    |> prepare_coin_for_creation() #Just in case but we do need the coinmarketcap_id always
+  end
+
+  #test
+  def initiate_quote_retrieval() do
+    get_top_quotes()
+    |> create_new_quotes()
   end
 
   # -> [%{"id" => 1, .. "quote" => %{"USD" => %{"price" => 12.0}}}, ...]
   #Gets the quotes in USD and metadata of the current top 100 cryptos in coinmarketcap
-  def get_top_quotes do
+  def get_top_quotes() do
     api_key = System.get_env("MARKETCAP_KEY")
 
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
@@ -463,6 +470,16 @@ defmodule Hodl.Portfolio do
   def get_coin_quote(coins) when is_list(coins) do
     {_, ids} = Enum.map_reduce(coins, "", fn coin, acc -> {coin, acc <> ","  <> Integer.to_string(coin.coinmarketcap_id)}end)
     ids = String.slice(ids, 1..-1) #Slice leading comma
+    api_key = System.get_env("MARKETCAP_KEY")
+    params = [id: ids]
+    {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}], [params: params])
+    {:ok, response_body} = Jason.decode(response.body)
+    %{"data" => data} = response_body
+    data
+  end
+
+  def get_coin_quote(coinmarketcap_id) do
+    ids = Integer.to_string(coinmarketcap_id)
     api_key = System.get_env("MARKETCAP_KEY")
     params = [id: ids]
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest", [{"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}], [params: params])
@@ -486,9 +503,14 @@ defmodule Hodl.Portfolio do
   # map -> {:ok, %Quote{}} || {:error, %Changeset{}}
   # Creates a new quote from the map params given
   def create_new_quote(%{"coinmarketcap_id" => id} = quote_params) do
-    coin = Repo.get_by(Coin, coinmarketcap_id: id)
-    quote_params = Map.put(quote_params, "coin_id", coin.id)
-    create_quote(quote_params)
+    case Repo.get_by(Coin, coinmarketcap_id: id) do
+      nil -> #If the coin doesn't exist in our db:
+        {:ok, coin} = create_coin(quote_params) #create the coin
+        coin = Repo.get_by(Coin, coinmarketcap_id: id)
+        Map.put(quote_params, "coin_id", coin.id) |> create_quote
+
+      coin -> Map.put(quote_params, "coin_id", coin.id) |> create_quote
+    end
   end
 
   @doc """
