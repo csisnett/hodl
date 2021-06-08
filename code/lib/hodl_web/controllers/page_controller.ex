@@ -7,6 +7,14 @@ defmodule HodlWeb.PageController do
     render(conn, "index.html")
   end
 
+  def why(conn, _params) do
+    render(conn, "why.html")
+  end
+
+  def plans(conn, _params) do
+    render(conn, "plans.html")
+  end
+
   def calculator(conn, _params) do
     render(conn, "calculator.html")
   end

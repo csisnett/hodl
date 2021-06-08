@@ -36,6 +36,8 @@ defmodule HodlWeb.Router do
 
     get "/", PageController, :index
     get "/new-hodl", PageController, :calculator
+    get "/why-hodl", PageController, :why
+    get "/plans", PageController, :plans
   end
 
   scope "/", HodlWeb do
