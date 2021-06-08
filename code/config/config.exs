@@ -29,7 +29,17 @@ config :phoenix, :json_library, Jason
 
 config :hodl, :pow,
   user: Hodl.Users.User,
-  repo: Hodl.Repo
+  repo: Hodl.Repo,
+  web_module: HodlWeb,
+  extensions: [PowResetPassword],
+  controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+  mailer_backend: HodlWeb.Pow.Mailer,
+  web_mailer_module: HodlWeb
+
+
+config :pow, HodlWeb.Pow.Mailer,
+  adapter: Swoosh.Adapters.Postmark,
+  api_key: System.get_env("POSTMARK_KEY")
 
 config :hodl, Oban,
 repo: Hodl.Repo,

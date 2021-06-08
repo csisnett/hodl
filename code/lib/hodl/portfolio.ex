@@ -448,10 +448,14 @@ defmodule Hodl.Portfolio do
     |> prepare_coin_for_creation() #Just in case but we do need the coinmarketcap_id always
   end
 
-  #test
+  #Main function that runs frequently
+  # Gets the quotes from coin market cap in json, creates the Quotes{}
+  # Compares the Quotes{} to active quote alerts to determine which need to go off
+  # Then sets off the quote alerts that need to go off
   def initiate_quote_retrieval() do
-    get_top_quotes()
-    |> create_new_quotes()
+    incoming_quotes = get_top_quotes() |> create_new_quotes()
+    active_quote_alerts = list_active_quote_alerts()
+    detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
   end
 
   # -> [%{"id" => 1, .. "quote" => %{"USD" => %{"price" => 12.0}}}, ...]
@@ -497,7 +501,9 @@ defmodule Hodl.Portfolio do
   # [%{}] -> :ok
   # Creates a %Quote{} for each quote param given
   def create_new_quotes(quotes_params) when is_list(quotes_params) do
-    Enum.each(quotes_params, fn coin -> get_quote_info(coin) |> create_new_quote end)
+    Enum.map(quotes_params, fn coin ->
+      {:ok, new_quote} =  get_quote_info(coin) |> create_new_quote
+      new_quote end)
   end
 
   # map -> {:ok, %Quote{}} || {:error, %Changeset{}}

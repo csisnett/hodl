@@ -2,6 +2,7 @@ defmodule Hodl.Users.User do
   use Ecto.Schema
   use Pow.Ecto.Schema
   import Ecto.Changeset
+  use Pow.Extension.Ecto.Schema, extensions: [PowResetPassword]
 
   schema "users" do
     field :username, :string
@@ -82,6 +83,7 @@ defmodule Hodl.Users.User do
     |> replace_white_space
     |> validate_length(:username, max: 15)
     |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
     |> unique_constraint(:username)
     |> unique_constraint(:email)
   end
