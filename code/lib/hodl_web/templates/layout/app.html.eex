@@ -44,7 +44,7 @@ function myFunction() {
  
    <a href="/why-hodl"> Why hodl? </a>
   <a href="<%= Routes.page_path(@conn, :calculator) %>" class="">Create a hodl schedule</a>
-  <a href="/new-price-alert"> Set a new price alert </a>
+  <a href="<%= Routes.quote_alert_path(@conn, :new) %>"> Set a new price alert </a>
   <a href="/plans"> Plans </a>
   <%= if Pow.Plug.current_user(@conn) do %>
   <% else %>
@@ -61,8 +61,8 @@ function myFunction() {
   </a>
 </div>
         </nav>
-        <a href="https://pelable.com/" class="">
-          <img src="<%= Routes.static_path(@conn, "/images/hodl.png") %>" alt="Pelable Logo"/>
+        <a href="https://howtohodl.org/" class="">
+          <img src="<%= Routes.static_path(@conn, "/images/hodl.png") %>" alt="How to hodl Logo"/>
         </a>
         </section>
     </header>
@@ -70,6 +70,10 @@ function myFunction() {
       <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
       <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
       <%= @inner_content %>
-    </main>
+      <hr>
+      <br>
+      <br>
+      <%= link "Terms and Conditions", to: Routes.page_path(@conn, :terms) %> -  <%= link "Privacy Policy", to: Routes.page_path(@conn, :privacy) %>
+      </main>
   </body>
 </html>

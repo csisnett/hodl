@@ -35,9 +35,12 @@ defmodule HodlWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
-    get "/new-hodl", PageController, :calculator
+    get "/new-schedule", PageController, :calculator
     get "/why-hodl", PageController, :why
     get "/plans", PageController, :plans
+    get "/terms", PageController, :terms
+    get "/privacy", PageController, :privacy
+    resources "/alerts", QuoteAlertController
   end
 
   scope "/", HodlWeb do
