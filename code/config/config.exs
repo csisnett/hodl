@@ -6,7 +6,6 @@
 
 # General application configuration
 use Mix.Config
-alias Hodl.Portfolio
 
 config :hodl,
   ecto_repos: [Hodl.Repo]
@@ -14,7 +13,7 @@ config :hodl,
 # Configures the endpoint
 config :hodl, HodlWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "QbXnwmNzesaafdCsq7pGlQmNI+rkoV8UItJWCv65Xd5q+L6D1B59rxjyJL4Ktp7c",
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
   render_errors: [view: HodlWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Hodl.PubSub,
   live_view: [signing_salt: "iVBXoGuJ"]
@@ -43,15 +42,12 @@ config :pow, HodlWeb.Pow.Mailer,
 
 config :hodl, Oban,
 repo: Hodl.Repo,
-plugins: [Oban.Plugins.Pruner,Oban.Plugins.Stager],
-queues: [events: [limit: 3]]
+plugins: [Oban.Plugins.Pruner,Oban.Plugins.Stager, {Oban.Plugins.Cron,
+crontab: [
+  {"*/5 * * * *", Hodl.MinuteWorker},
+]}],
+queues: [repetitive: [limit: 3]]
 
-config :hodl, Hodl.Scheduler,
-  jobs: [
-    # Every 5th minute
-    {"*/5 * * * *", fn -> Portfolio.initiate_quote_retrieval() end}
-
-  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
