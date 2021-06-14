@@ -1,5 +1,68 @@
-<h1>New Quote alert</h1>
 
-<%= render "form.html", Map.put(assigns, :action, Routes.quote_alert_path(@conn, :create)) %>
+<%= csrf_meta_tag() %>
+
+<div id="app_basic" class="container">
+
+<b-form>
+Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> <h1>New Quote alert</h1> <br>
+<div style="display: inline-block">I want to be notified when {{options[selected].name}} is <b-form-select v-model="comparator" :options="comparator_options"></b-form-select><b-form-input  v-model="user_alert_price" :id="`type-number`" :type="`number`"> </b-form-input> USD
+</div>
+</b-form>
+</div>
+
 
 <span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>
+
+<script>
+
+var app = new Vue({
+    el: '#app_basic',
+    data: function(){
+        return {
+            selected: null,
+            hello: "world",
+            options: [],
+            user_alert_price: null,
+            comparator_options: ["equal or greater than", "lower than"],
+            comparator: "equal or greater than"
+        }
+    },
+    created: function (){
+        get_top_coins();
+    },
+    watch: {
+        selected: function(){
+            this.user_alert_price = this.options[this.selected]["price_usd"]
+        }
+
+    }
+})
+
+function get_top_coins(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", "/top-coins", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+        let arr = [{value: null, text: "Select a coin for your alert"}]
+        let coins = arr.concat(response.coins)
+        for (i = 1; i < 101; i++){
+            coins[i]["text"] = coins[i]["name"]
+            coins[i]["value"] = i
+        }
+
+      if (xhr.status == "200") {
+        console.log("Got coins! wow")
+        app.options =  coins;
+        app.selected = 1;
+        app.user_alert_price = app.options[1]["price_usd"]
+
+      } else {
+        console.log("No coins :(")
+        }
+      }
+      xhr.send(json);
+}
+</script>
