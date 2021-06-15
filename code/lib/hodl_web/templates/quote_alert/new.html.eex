@@ -66,10 +66,10 @@ var app = new Vue({
     xhr.onload = function () {
 	  let response = JSON.parse(xhr.responseText);
      console.log(response)
-      if (xhr.status == "200") {
+      if (xhr.status == "201") {
         console.log("quote alert created!")
       } else {
-        console.log("Habit wasn't logged!");
+        console.log("quote alert wasn't created!");
       }
       }
       xhr.send(json);

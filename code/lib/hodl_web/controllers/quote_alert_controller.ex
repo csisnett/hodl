@@ -15,14 +15,12 @@ defmodule HodlWeb.QuoteAlertController do
   end
 
   def create(conn, %{"quote_alert" => quote_alert_params}) do
-    case Portfolio.create_quote_alert(quote_alert_params) do
-      {:ok, quote_alert} ->
-        conn
-        |> put_flash(:info, "Quote alert created successfully.")
-        |> redirect(to: Routes.quote_alert_path(conn, :show, quote_alert))
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset)
+    user = conn.assigns.current_user
+    with {:ok, %QuoteAlert{} = quote_alert} <- Portfolio.create_quote_alert(quote_alert_params, user) do
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", Routes.quote_alert_path(conn, :show, quote_alert))
+      |> render("show.json", quote_alert: quote_alert)
     end
   end
 

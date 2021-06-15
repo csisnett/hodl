@@ -13,6 +13,10 @@
   <%= text_input f, :symbol %>
   <%= error_tag f, :symbol %>
 
+    <%= label f, :"Coin market cap id" %>
+  <%= number_input f, :coinmarketcap_id %>
+  <%= error_tag f, :coinmarketcap_id %>
+
   <div>
     <%= submit "Save" %>
   </div>
