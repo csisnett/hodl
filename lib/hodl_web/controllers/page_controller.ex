@@ -4,7 +4,7 @@ defmodule HodlWeb.PageController do
   alias Hodl.Users.User
 
   def index(conn, _params) do
-    render(conn, "index.html")
+    redirect(conn, to: "/why-hodl")
   end
 
   def why(conn, _params) do
