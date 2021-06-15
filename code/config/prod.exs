@@ -10,7 +10,9 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :hodl, HodlWeb.Endpoint,
-  url: [host: System.get_env("RENDER_EXTERNAL_HOSTNAME") || "localhost", port: 80],
+  http: [:inet6, port: System.get_env("PORT") || 4000],
+  url: [host: System.get_env("RENDER_EXTERNAL_HOSTNAME") || "localhost", scheme: "https", port: 443],
+  check_origin: ["//locahost", "//howtohodl.org"],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production

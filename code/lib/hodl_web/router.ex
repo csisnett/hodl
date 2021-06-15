@@ -9,6 +9,7 @@ defmodule HodlWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug HodlWeb.Pow.Plug, otp_app: :hodl
   end
 
   pipeline :api do
@@ -17,6 +18,7 @@ defmodule HodlWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug HodlWeb.Pow.Plug, otp_app: :hodl
   end
 
   pipeline :protected do
@@ -40,12 +42,19 @@ defmodule HodlWeb.Router do
     get "/plans", PageController, :plans
     get "/terms", PageController, :terms
     get "/privacy", PageController, :privacy
-    resources "/alerts", QuoteAlertController, except: [:new, :show]
+    resources "/alerts", QuoteAlertController, except: [:new, :show, :create]
   end
 
   scope "/", HodlWeb do
     pipe_through [:browser, :protected]
     get "/new-alert", QuoteAlertController, :new
+    resources "/coins", CoinController
+  end
+
+  scope "/", HodlWeb do
+    pipe_through [:api]
+
+    post "/alerts", QuoteAlertController, :create
   end
 
   scope "/", HodlWeb do
@@ -53,6 +62,7 @@ defmodule HodlWeb.Router do
 
     get "/top-coins", CoinController, :top_coins
     post "/create-hodl", HodlscheduleController, :create
+    
     get "/all-hodl", HodlscheduleController, :index
     get "/username-suggestion", PageController, :random_username
   end

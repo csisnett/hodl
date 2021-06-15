@@ -1,12 +1,13 @@
 
 <%= csrf_meta_tag() %>
-
 <div id="app_basic" class="container">
 
-<b-form>
-Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> <h1>New Quote alert</h1> <br>
-<div style="display: inline-block">I want to be notified when {{options[selected].name}} is <b-form-select v-model="comparator" :options="comparator_options"></b-form-select><b-form-input  v-model="user_alert_price" :id="`type-number`" :type="`number`"> </b-form-input> USD
+<b-form @submit="onSubmit">
+<h1>New Price alert</h1>
+Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> <br> <br>
+<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4> <b-form-select v-model="comparator" :options="comparator_options"></b-form-select><b-form-input style="display: inline-block" v-model="user_alert_price" :id="`type-number`" :type="`number`"> </b-form-input> USD
 </div>
+<input type="submit" value="Create">
 </b-form>
 </div>
 
@@ -24,11 +25,20 @@ var app = new Vue({
             options: [],
             user_alert_price: null,
             comparator_options: ["equal or greater than", "lower than"],
-            comparator: "equal or greater than"
+            comparator: "equal or greater than",
+            csrf_token: null
         }
     },
     created: function (){
         get_top_coins();
+        let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+        this.csrf_token = csrf_token;
+    },
+    methods: {
+        onSubmit(event){
+            event.preventDefault();
+            create_quote_alert();
+        }
     },
     watch: {
         selected: function(){
@@ -37,6 +47,34 @@ var app = new Vue({
 
     }
 })
+
+  function create_quote_alert() {
+    let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+
+    let base_url = "<%= Routes.quote_alert_url(@conn, :create) %>" ;
+    let url = base_url
+    let data = {}
+    data._csrf_token = csrf_token;
+    let quote_alert = {comparator: app.comparator, price_usd: app.user_alert_price, coin_uuid: app.options[app.selected]["uuid"]};
+    data.quote_alert = quote_alert;
+
+    let json = JSON.stringify(data);
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+    xhr.onload = function () {
+	  let response = JSON.parse(xhr.responseText);
+     console.log(response)
+      if (xhr.status == "200") {
+        console.log("quote alert created!")
+      } else {
+        console.log("Habit wasn't logged!");
+      }
+      }
+      xhr.send(json);
+      
+  }
 
 function get_top_coins(){
       let json = JSON.stringify({});

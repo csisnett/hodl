@@ -12,7 +12,8 @@ defmodule HodlWeb.Endpoint do
 
   socket "/socket", HodlWeb.UserSocket,
     websocket: true,
-    longpoll: false
+    longpoll: false,
+    check_origin: ["//localhost", "//howtohodl.org"]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
@@ -51,5 +52,7 @@ defmodule HodlWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug Pow.Plug.Session, otp_app: :hodl
+  plug PowPersistentSession.Plug.Cookie
+  plug CORSPlug
   plug HodlWeb.Router
 end

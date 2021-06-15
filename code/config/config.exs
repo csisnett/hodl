@@ -12,7 +12,7 @@ config :hodl,
 
 # Configures the endpoint
 config :hodl, HodlWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: "localhost", port: 4000],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   render_errors: [view: HodlWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Hodl.PubSub,
@@ -30,7 +30,7 @@ config :hodl, :pow,
   user: Hodl.Users.User,
   repo: Hodl.Repo,
   web_module: HodlWeb,
-  extensions: [PowResetPassword],
+  extensions: [PowResetPassword, PowPersistentSession],
   controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
   mailer_backend: HodlWeb.Pow.Mailer,
   web_mailer_module: HodlWeb
