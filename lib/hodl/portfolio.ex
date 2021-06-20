@@ -455,7 +455,14 @@ defmodule Hodl.Portfolio do
   def initiate_quote_retrieval() do
     incoming_quotes = get_top_quotes() |> create_new_quotes()
     active_quote_alerts = list_active_quote_alerts()
-    detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
+    alerts_to_trigger = detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
+    Enum.map(alerts_to_trigger, fn quote_alert -> insert_job_for_quote_email(quote_alert) end)
+  end
+
+  def insert_job_for_quote_email(quote_alert) do
+    %{id: quote_alert.id}
+    |> Hodl.Portfolio.QuoteEmailWorker.new()
+    |> Oban.insert()
   end
 
   # -> [%{"id" => 1, .. "quote" => %{"USD" => %{"price" => 12.0}}}, ...]
@@ -711,7 +718,16 @@ defmodule Hodl.Portfolio do
   def get_top_coins_quotes() do
     ranking = Portfolio.get_ranking!(1)
     coins = get_ranking_coins(ranking)
-    coins_quotes = Enum.map(coins, fn coin -> Map.put(coin, :price_usd, last_quote(coin))end)
+    coins_quotes = Enum.map(coins, fn coin -> Map.put(coin, :price_usd, last_quote_price(coin))end)
+  end
+
+  def last_quote_price(%Coin{} = coin) do
+    query = from q in Quote,
+    where: q.coin_id == ^coin.id,
+    order_by: [desc: q.inserted_at],
+    limit: 1,
+    select: q.price_usd
+    Repo.one(query)
   end
 
   def last_quote(%Coin{} = coin) do
@@ -719,7 +735,7 @@ defmodule Hodl.Portfolio do
     where: q.coin_id == ^coin.id,
     order_by: [desc: q.inserted_at],
     limit: 1,
-    select: q.price_usd
+    select: q
     Repo.one(query)
   end
 
@@ -922,7 +938,7 @@ defmodule Hodl.Portfolio do
   """
   def update_quote_alert(%QuoteAlert{} = quote_alert, attrs) do
     quote_alert
-    |> QuoteAlert.changeset(attrs)
+    |> QuoteAlert.update_changeset(attrs)
     |> Repo.update()
   end
 
@@ -967,7 +983,7 @@ defmodule Hodl.Portfolio do
 
   def list_active_quote_alerts() do
     query = from q in QuoteAlert,
-    where: q.active? == true,
+    where: q.active? == true and is_nil(q.trigger_quote_id),
     select: q
     Repo.all(query)
   end
@@ -1009,13 +1025,23 @@ defmodule Hodl.Portfolio do
     end
   end
 
+  def get_quote_alert_by_uuid(uuid) do
+    Repo.get_by(QuoteAlert, uuid: uuid)
+  end
+
   # Quote, [QuoteAlert{}] -> [QuoteAlert{}]
   # For the coin in Quote return all the respective Quote Alerts that need to go off
   # How it works: We filter the quote alerts for the current coin in Quote,
   # then we output the quote alerts if they need to go off
   def quote_alerts_that_go_off_for_quote(%Quote{} = myquote, quote_alerts) when is_list(quote_alerts) do
     relevant_quote_alerts = Enum.filter(quote_alerts, fn quote_alert -> quote_alert.coin_id == myquote.coin_id end)
-    Enum.filter(relevant_quote_alerts, fn quote_alert -> should_quote_alert_go_off?(myquote, quote_alert) end)
+    filtered_alerts = Enum.filter(relevant_quote_alerts, fn quote_alert -> should_quote_alert_go_off?(myquote, quote_alert) end)
+    insert_trigger_quote(myquote, filtered_alerts)
+  end
+
+  def insert_trigger_quote(%Quote{} = my_quote, quote_alerts) do
+    Enum.map(quote_alerts, fn quote_alert -> update_quote_alert(quote_alert, %{"trigger_quote_id" => my_quote.id}) end)
+    |> Enum.map(fn {:ok, quote_alert} -> quote_alert end)
   end
 
   # [], (1)[QuoteAlert, ...], (2)[QuoteAlert] -> (2)[QuoteAlert]
@@ -1032,5 +1058,12 @@ defmodule Hodl.Portfolio do
     quote_alerts_to_set_off = quote_alerts_that_go_off_for_quote(first_quote, active_quote_alerts)
     result = result ++ quote_alerts_to_set_off
     detect_alerts_to_set_off(rest, active_quote_alerts, result)
+  end
+
+  #Sends the email when the alert is triggered
+  def send_quote_alert_email(%QuoteAlert{trigger_quote_id: _} = quote_alert) do
+    quote_alert = Repo.preload(quote_alert, [:trigger_quote, :coin, :user])
+    email = HodlWeb.UserEmail.alert(quote_alert.user, quote_alert.trigger_quote, quote_alert, "alert was triggered")
+    HodlWeb.Pow.Mailer.process(email)
   end
 end

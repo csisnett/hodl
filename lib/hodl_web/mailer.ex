@@ -11,7 +11,7 @@ defmodule HodlWeb.Pow.Mailer do
     def cast(%{user: user, subject: subject, text: text, html: html}) do
       %Swoosh.Email{}
       |> to({user.username, user.email})
-      |> from({"Daniel from HowtoHodl.org", "daniel@howtohodl.org"})
+      |> from({"Daniel from Howtohodl.org", "daniel@howtohodl.org"})
       |> subject(subject)
       |> html_body(html)
       |> text_body(text)

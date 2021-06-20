@@ -44,9 +44,9 @@ config :hodl, Oban,
 repo: Hodl.Repo,
 plugins: [Oban.Plugins.Pruner,Oban.Plugins.Stager, {Oban.Plugins.Cron,
 crontab: [
-  {"*/5 * * * *", Hodl.MinuteWorker},
+  {"* * * * *", Hodl.MinuteWorker},
 ]}],
-queues: [repetitive: [limit: 3]]
+queues: [repetitive: [limit: 3], emails: [limit: 3]]
 
 
 # Import environment specific config. This must remain at the bottom

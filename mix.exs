@@ -52,7 +52,8 @@ defmodule Hodl.MixProject do
       {:ecto_autoslug_field, "~> 2.0"},
       {:quantum, "~> 3.3"},
       {:swoosh, "~> 1.3.11"},
-      {:cors_plug, "~> 2.0"}
+      {:cors_plug, "~> 2.0"},
+      {:phoenix_swoosh, "~> 0.3"}
     ]
   end
 
