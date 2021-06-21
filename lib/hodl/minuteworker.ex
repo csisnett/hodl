@@ -15,14 +15,17 @@ defmodule Hodl.MinuteWorker do
       IO.inspect(DateTime.utc_now())
 
       Portfolio.initiate_quote_retrieval()
-
       :ok
     end
   
     def perform(job) do
-      IO.inspect(DateTime.utc_now())
-      Portfolio.initiate_quote_retrieval()
+      case Application.fetch_env!(:hodl, :development) do
+        "false" ->
+          IO.inspect(DateTime.utc_now())
+          Portfolio.initiate_quote_retrieval()
 
+        "true" -> IO.inspect("Not getting quotes in dev env")
+      end
       :ok
     end
   end
