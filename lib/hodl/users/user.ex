@@ -21,13 +21,13 @@ defmodule Hodl.Users.User do
     "diplomatic", "considerate", "elegant"]
 
     nouns = ["apple", "zelda", "taco", "water", "sushi",
-     "pizza", "light", "snow", "pikachu", "brook", "bread",
+     "pizza", "light", "snow",  "bread",
      "tomato", "book", "liquid", "platypus", "stardust",
       "pencil", "pizzeria", "noodle", "fan", "chair",
       "table", "pan", "spaguetti", "enchilada",
       "empanada", "milk", "cheese", "tacos",
       "ravioli", "panda", "lake", "cup", "laptop", "igloo", "link",
-      "pokeball", "pokedex", "pokemon", "gym", "elixir", "gold",
+      "gym", "elixir", "gold",
       "bit", "agua", "ruby", "gem", "diamond", "cookie", "pow",
       "swift", "grande", "hodl", "hodler", "mello", "marshmello",
       "mars", "venus", "neptune", "pluto", "saturn", "andromeda",
@@ -74,7 +74,12 @@ defmodule Hodl.Users.User do
         changeset |> put_change(:username, String.replace(username, ~r/ +/, ""))
     end
   end
+
+
+
   def changeset(user, attrs) do
+    attrs = put_confirm_password(attrs)
+
     user
     |> cast(attrs, [:username, :email])
     |> validate_required([:email])
@@ -87,4 +92,14 @@ defmodule Hodl.Users.User do
     |> unique_constraint(:username)
     |> unique_constraint(:email)
   end
+
+  defp put_confirm_password(attrs) do
+    case has_confirm_password?(attrs) do
+      true  -> attrs
+      false -> Map.put(attrs, "confirm_password", attrs["password"])
+    end
+  end
+
+  defp has_confirm_password?(%{"confirm_password" => confirm_password}) when is_binary(confirm_password) and confirm_password != "", do: true
+  defp has_confirm_password?(_attrs), do: false
 end
