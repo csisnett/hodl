@@ -11,13 +11,16 @@
   <%= text_input f, Pow.Ecto.Schema.user_id_field(@changeset) %>
   <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
 
+   <%= label f, :username %>
+  <%= text_input f, :username %>
+  <%= if message = f.errors[:username] do %>
+    <span id="error"> <%= translate_error(message) %> </span>
+  <% end %>
   <%= label f, :password %>
   <%= password_input f, :password %>
   <%= error_tag f, :password %>
 
-  <%= label f, :password_confirmation %>
-  <%= password_input f, :password_confirmation %>
-  <%= error_tag f, :password_confirmation %>
+  <%= hidden_input f, :timezone%>
 
   <div>
     <%= submit "Register" %>
@@ -26,3 +29,8 @@
 
 
 <span><%= link "Sign in", to: Routes.pow_session_path(@conn, :new) %></span>
+
+<script>
+var timezone_element = document.getElementById("user_timezone");
+timezone_element.value = Intl.DateTimeFormat().resolvedOptions().timeZone
+</script>
