@@ -54,11 +54,11 @@ var app = new Vue(
             return re.test(this.email)
         },
         username_validation(){
-          return this.username.length <= 15;
+          return this.username.length <= 20;
         },
         username_message(){
-          if(this.username.length > 15){
-            return "Your username's length can't be more than 15 characters"
+          if(this.username.length > 20){
+            return "Your username's length can't be more than 20 characters"
           } else{
             return ""
           }

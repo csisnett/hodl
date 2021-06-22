@@ -35,15 +35,23 @@ defmodule Hodl.Users.User do
       "chocolate", "almond", "tea", "sun", "phoenix", "tiger", "giraffe",
       "zebra"]
 
-    noun_or_adjective = :rand.uniform(2)
-    random_number =  :rand.uniform(999) |> Integer.to_string
-    case noun_or_adjective do
-      1 -> 
-        adjective = Enum.random(adjectives)
-        adjective <> random_number
-      2 ->
+    number_or_not = :rand.uniform(2)
+    case number_or_not do
+      1 ->
         noun = Enum.random(nouns)
-        noun <> random_number
+        adjective = Enum.random(adjectives)
+        adjective <> noun
+      2 ->
+      noun_or_adjective = :rand.uniform(2)
+      random_number =  :rand.uniform(999) |> Integer.to_string
+      case noun_or_adjective do
+        1 -> 
+          adjective = Enum.random(adjectives)
+          adjective <> random_number
+        2 ->
+          noun = Enum.random(nouns)
+          noun <> random_number
+      end
     end
   end
 
@@ -86,7 +94,7 @@ defmodule Hodl.Users.User do
     |> generate_random_username
     |> lowercase_username
     |> replace_white_space
-    |> validate_length(:username, max: 15)
+    |> validate_length(:username, max: 20)
     |> pow_changeset(attrs)
     |> pow_extension_changeset(attrs)
     |> unique_constraint(:username)
