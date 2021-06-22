@@ -20,13 +20,13 @@ defmodule Hodl.Users.User do
     "helpful", "kind", "diligent", "patient", "dynamic", "loyal",
     "diplomatic", "considerate", "elegant"]
 
-    nouns = ["apple", "zelda", "taco", "water", "sushi",
+    nouns = ["apple", "taco", "water", "sushi",
      "pizza", "light", "snow",  "bread",
      "tomato", "book", "liquid", "platypus", "stardust",
       "pencil", "pizzeria", "noodle", "fan", "chair",
       "table", "pan", "spaguetti", "enchilada",
       "empanada", "milk", "cheese", "tacos",
-      "ravioli", "panda", "lake", "cup", "laptop", "igloo", "link",
+      "ravioli", "panda", "lake", "cup", "laptop", "igloo", "hyperlink",
       "gym", "elixir", "gold",
       "bit", "agua", "ruby", "gem", "diamond", "cookie", "pow",
       "swift", "grande", "hodl", "hodler", "mello", "marshmello",
