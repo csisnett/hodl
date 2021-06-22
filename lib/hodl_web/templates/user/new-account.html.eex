@@ -5,14 +5,21 @@
 <b-form action="/create-account" method="post">
 <input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token()  %>">
 <label>Email</label>
-<b-form-input name="user[email]" autofocus v-model="email" placeholder="Enter your email"></b-form-input>
+<b-form-input name="user[email]" autofocus v-model="email" :state="email_validation" placeholder="Enter your email"></b-form-input>
 Username
 <b-form-input name="user[username]" v-model="username" placeholder="Enter your username"></b-form-input>
 Password
-<b-form-input name="user[password]" v-model="password" :id="`type-${type}`" :type="type" placeholder="Enter your password" ></b-form-input>
+<b-form-input name="user[password]" v-model="password" :id="`type-${type}`" :type="type" :state="password_validation" placeholder="Enter your password" ></b-form-input>
+<h6> {{character_remaining}} </h6> <br>
+<input id="user_timezone" name="user[timezone]" type="hidden">
 <input type="submit" value="Submit">
 </b-form>
 </div>
+
+<script>
+var timezone_element = document.getElementById("user_timezone");
+timezone_element.value = Intl.DateTimeFormat().resolvedOptions().timeZone
+</script>
 
 <script>
 var app = new Vue(
@@ -27,6 +34,27 @@ var app = new Vue(
             timezone: "",
             username: "",
             type: 'password'
+        }
+    },
+    computed: {
+        password_validation(){
+            return this.password.length >= 8;
+        },
+        email_validation(){
+            let re = /\S+@\S+\.\S+/
+            return re.test(this.email)
+        },
+        character_remaining(){
+            if(this.password.length == 1){
+                return "1 character remaining for your password"
+            }
+            if(this.password.length < 8) {
+                let n = 8 - this.password.length;
+            return `${n} characters remaining for your password`
+            } else{
+                return "All good."
+            }
+            
         }
     }
     }
