@@ -1,36 +1,113 @@
 <h1>Create an account</h1>
 
-<%= form_for @changeset, @action, [as: :user], fn f -> %>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
   <% end %>
 
-  <%= label f, Pow.Ecto.Schema.user_id_field(@changeset) %>
-  <%= text_input f, Pow.Ecto.Schema.user_id_field(@changeset) %>
-  <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+<div id="app" class="container">
 
-   <%= label f, :username %>
-  <%= text_input f, :username %>
-  <%= if message = f.errors[:username] do %>
-    <span id="error"> <%= translate_error(message) %> </span>
-  <% end %>
-  <%= label f, :password %>
-  <%= password_input f, :password %>
-  <%= error_tag f, :password %>
-
-  <%= hidden_input f, :timezone%>
-
-  <div>
-    <%= submit "Register" %>
-  </div>
-<% end %>
-
+<b-form action="/create-account" method="post">
+<input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token()  %>">
+<label>Email</label>
+<b-form-input name="user[email]" autofocus v-model="email" :state="email_validation" placeholder="Enter your email"></b-form-input>
+<label> Username </label>
+<b-form-input name="user[username]" v-model="username" :state="username_validation" placeholder="Enter your username"></b-form-input> <h6> Suggested username: {{username_suggestion}} </h6>
+<h6> {{username_message}} </h6>
+<label> Password </label>
+<b-form-input name="user[password]" v-model="password" :id="`type-${type}`" :type="type" :state="password_validation" placeholder="Enter your password" ></b-form-input>
+<h6> {{character_remaining}} </h6> <br>
+<input id="user_timezone" name="user[timezone]" type="hidden">
+<input type="submit" value="Register">
+</b-form>
+</div>
 
 <span><%= link "Sign in", to: Routes.pow_session_path(@conn, :new) %></span>
+<script>
+var app = new Vue(
+    {
+    el: '#app',
+    data: function(){
+        return {
+            selected: null,
+            data: "hola",
+            email: "",
+            password: "",
+            timezone: "",
+            username: "",
+            type: 'password',
+            username_suggestion: ""
+        }
+    },
+    methods: {
+        get_suggested_username: function() {
+        get_random_username()
+        }
+    },
+    computed: {
+        password_validation(){
+            return this.password.length >= 8;
+        },
+        email_validation(){
+            let re = /\S+@\S+\.\S+/
+            return re.test(this.email)
+        },
+        username_validation(){
+          return this.username.length <= 15;
+        },
+        username_message(){
+          if(this.username.length > 15){
+            return "Your username's length can't be more than 15 characters"
+          } else{
+            return ""
+          }
+        },
+        character_remaining(){
+            if(this.password.length == 1){
+                return "1 character remaining for your password"
+            }
+            if(this.password.length < 8) {
+                let n = 8 - this.password.length;
+            return `${n} characters remaining to complete your password`
+            } else{
+                return "Your password's length is good."
+            }
+            
+        }
+    }
+    }
+);
+</script>
+
+
+
 
 <script>
 var timezone_element = document.getElementById("user_timezone");
 timezone_element.value = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+
+function get_random_username(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", "/username-suggestion", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+        
+      if (xhr.status == "200") {
+        console.log("Got username! wow")
+        app.username = response.username;
+        app.username_suggestion = response.username
+        
+
+      } else {
+        console.log("No username :(")
+        }
+      }
+      xhr.send(json);
+}
+setTimeout(function(){ get_random_username() }, 1500);
 </script>

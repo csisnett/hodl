@@ -15,7 +15,12 @@ defmodule Hodl.Accounts do
   def create_user(user_params) do
     changeset = User.changeset(%User{}, user_params)
     case changeset.valid?  do
-      true -> Repo.insert(changeset) # {:ok, User{}}
+      true ->
+        {:ok, user} = Repo.insert(changeset) # {:ok, User{}}
+        %{"user_id" => user.id, "setting_key" => "timezone", "value" => user_params["timezone"]}
+        |> create_setting()
+
+        {:ok, user}
       false -> {:error, changeset}
     end
   end
