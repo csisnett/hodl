@@ -1,0 +1,34 @@
+<%= csrf_meta_tag() %>
+<div id="app" class="container">
+<h2> Create an account </h2>
+
+<b-form action="/create-account" method="post">
+<input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token()  %>">
+<label>Email</label>
+<b-form-input name="user[email]" autofocus v-model="email" placeholder="Enter your email"></b-form-input>
+Username
+<b-form-input name="user[username]" v-model="username" placeholder="Enter your username"></b-form-input>
+Password
+<b-form-input name="user[password]" v-model="password" :id="`type-${type}`" :type="type" placeholder="Enter your password" ></b-form-input>
+<input type="submit" value="Submit">
+</b-form>
+</div>
+
+<script>
+var app = new Vue(
+    {
+    el: '#app',
+    data: function(){
+        return {
+            selected: null,
+            data: "hola",
+            email: "",
+            password: "",
+            timezone: "",
+            username: "",
+            type: 'password'
+        }
+    }
+    }
+);
+</script>

@@ -4,15 +4,6 @@ defmodule HodlWeb.SettingController do
   alias Hodl.Accounts
   alias Hodl.Accounts.Setting
 
-  def new_user(conn, _params) do
-    render(conn, "new-account.html")
-  end
-
-  def create_account(conn, %{"user" => user_params}) do
-    settings = Accounts.list_settings()
-    render(conn, "index.html", settings: settings)
-  end
-
   def index(conn, _params) do
     settings = Accounts.list_settings()
     render(conn, "index.html", settings: settings)

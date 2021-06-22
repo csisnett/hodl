@@ -11,6 +11,15 @@ defmodule Hodl.Accounts do
 
   @user_editable_settings ["timezone"]
 
+  # Map -> {:ok, %User{}}, || {:error, %User{}}
+  def create_user(user_params) do
+    changeset = User.changeset(%User{}, user_params)
+    case changeset.valid?  do
+      true -> Repo.insert(changeset) # {:ok, User{}}
+      false -> {:error, changeset}
+    end
+  end
+
   @doc """
   Returns the list of settings.
 

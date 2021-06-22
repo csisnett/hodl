@@ -43,6 +43,8 @@ defmodule HodlWeb.Router do
     get "/terms", PageController, :terms
     get "/privacy", PageController, :privacy
     resources "/alerts", QuoteAlertController, except: [:new, :create]
+    get "/new-account", UserController, :new_account
+    post "/create-account", UserController, :create_account
   end
 
   scope "/", HodlWeb do

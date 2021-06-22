@@ -28,6 +28,15 @@ defmodule HodlWeb.Pow.Plug do
   
       {conn, user}
     end
+
+    # %Conn{}, %User{} -> %Conn{}
+    def sign_in_user_from_server(conn, user) do
+      token = Phoenix.Token.sign(HodlWeb.Endpoint, @salt, user.id)
+
+        conn
+        |> Plug.Conn.fetch_session()
+        |> Plug.Conn.put_session(@session_key, token)
+    end
   
     def delete(conn, config) do
       conn
