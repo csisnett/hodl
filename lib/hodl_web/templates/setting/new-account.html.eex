@@ -1,0 +1,32 @@
+<%= csrf_meta_tag() %>
+<div id="app" class="container">
+<h2> Create an account </h2>
+
+<b-form>
+<label>Email</label>
+<b-form-input autofocus v-model="email" placeholder="Enter your email"></b-form-input>
+Username
+<b-form-input v-model="username" placeholder="Enter your username"></b-form-input>
+Password
+<b-form-input v-model="password" :id="`type-${type}`" :type="type" placeholder="Enter your password" ></b-form-input>
+</b-form>
+</div>
+
+<script>
+var app = new Vue(
+    {
+    el: '#app',
+    data: function(){
+        return {
+            selected: null,
+            data: "hola",
+            email: "",
+            password: "",
+            timezone: "",
+            username: "",
+            type: 'password'
+        }
+    }
+    }
+);
+</script>
