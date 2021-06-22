@@ -10,6 +10,8 @@ use Mix.Config
 config :hodl,
   ecto_repos: [Hodl.Repo]
 
+config :hodl, development: System.get_env("DEVELOPMENT")
+
 # Configures the endpoint
 config :hodl, HodlWeb.Endpoint,
   url: [host: "localhost", port: 4000],
