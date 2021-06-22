@@ -96,10 +96,10 @@ defmodule Hodl.Users.User do
   defp put_confirm_password(attrs) do
     case has_confirm_password?(attrs) do
       true  -> attrs
-      false -> Map.put(attrs, "confirm_password", attrs["password"])
+      false -> Map.put(attrs, "password_confirmation", attrs["password"])
     end
   end
 
-  defp has_confirm_password?(%{"confirm_password" => confirm_password}) when is_binary(confirm_password) and confirm_password != "", do: true
+  defp has_confirm_password?(%{"password_confirmation" => confirm_password}) when is_binary(confirm_password) and confirm_password != "", do: true
   defp has_confirm_password?(_attrs), do: false
 end
