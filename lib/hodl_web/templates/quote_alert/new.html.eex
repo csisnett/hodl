@@ -4,8 +4,10 @@
 
 <b-form @submit="onSubmit">
 <h1>New Price alert</h1>
-Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> <br> <br>
-<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4> <b-form-select v-model="comparator" :options="comparator_options"></b-form-select><b-form-input style="display: inline-block" v-model="user_alert_price" :id="`type-number`" :type="`number`"> </b-form-input> USD
+Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> Current price: {{this.options[this.selected]["price_usd"]}} USD  <br> <br>
+<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4>
+ <b-form-select v-model="comparator" :options="comparator_options"></b-form-select>
+<input type="text" style="width: 150px;" v-model="user_alert_price"> USD <svg onclick="trash()" v-b-popover.hover.top="'Eliminate decimals'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M3 6v18h18v-18h-18zm5 14c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4-18v2h-20v-2h5.711c.9 0 1.631-1.099 1.631-2h5.315c0 .901.73 2 1.631 2h5.712z"/></svg>
 </div>
 <input type="submit" value="Create">
 </b-form>
@@ -26,7 +28,8 @@ var app = new Vue({
             user_alert_price: null,
             comparator_options: ["equal or greater than", "lower than"],
             comparator: "equal or greater than",
-            csrf_token: null
+            csrf_token: null,
+            loading: true
         }
     },
     created: function (){
@@ -102,5 +105,11 @@ function get_top_coins(){
         }
       }
       xhr.send(json);
+}
+
+function trash(){
+  let price_alert_number = app.user_alert_price
+  let new_number = Math.trunc(price_alert_number)
+  app.user_alert_price = new_number;
 }
 </script>
