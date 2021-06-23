@@ -24,19 +24,19 @@ defmodule HodlWeb.QuoteAlertController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    quote_alert = Portfolio.get_quote_alert!(id)
+  def show(conn, %{"uuid" => uuid}) do
+    quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
     render(conn, "show.html", quote_alert: quote_alert)
   end
 
-  def edit(conn, %{"id" => id}) do
-    quote_alert = Portfolio.get_quote_alert!(id)
+  def edit(conn, %{"uuid" => uuid}) do
+    quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
     changeset = Portfolio.change_quote_alert(quote_alert)
     render(conn, "edit.html", quote_alert: quote_alert, changeset: changeset)
   end
 
-  def update(conn, %{"id" => id, "quote_alert" => quote_alert_params}) do
-    quote_alert = Portfolio.get_quote_alert!(id)
+  def update(conn, %{"uuid" => uuid, "quote_alert" => quote_alert_params}) do
+    quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
 
     case Portfolio.update_quote_alert(quote_alert, quote_alert_params) do
       {:ok, quote_alert} ->
@@ -49,8 +49,8 @@ defmodule HodlWeb.QuoteAlertController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    quote_alert = Portfolio.get_quote_alert!(id)
+  def delete(conn, %{"uuid" => uuid}) do
+    quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
     {:ok, _quote_alert} = Portfolio.delete_quote_alert(quote_alert)
 
     conn

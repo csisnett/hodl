@@ -1025,6 +1025,7 @@ defmodule Hodl.Portfolio do
     end
   end
 
+  # String -> %QuoteAlert{}
   def get_quote_alert_by_uuid(uuid) do
     Repo.get_by(QuoteAlert, uuid: uuid)
   end
