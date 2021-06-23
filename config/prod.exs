@@ -11,7 +11,7 @@ use Mix.Config
 # before starting your production server.
 config :hodl, HodlWeb.Endpoint,
   http: [:inet6, port: System.get_env("PORT") || 4000],
-  url: [host: System.get_env("RENDER_EXTERNAL_HOSTNAME") || "localhost", scheme: "https", port: 443],
+  url: [host: System.get_env("EXTERNAL_HOSTNAME") || "localhost", scheme: "https", port: 443],
   check_origin: ["//locahost", "//howtohodl.org"],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
