@@ -5,7 +5,8 @@ defmodule HodlWeb.QuoteAlertController do
   alias Hodl.Portfolio.QuoteAlert
 
   def index(conn, _params) do
-    quotealerts = Portfolio.list_quotealerts()
+    user = conn.assigns.current_user
+    quotealerts = Portfolio.list_user_quotealerts(user)
     render(conn, "index.html", quotealerts: quotealerts)
   end
 

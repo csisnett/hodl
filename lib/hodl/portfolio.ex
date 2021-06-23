@@ -882,6 +882,15 @@ defmodule Hodl.Portfolio do
     Repo.all(QuoteAlert)
   end
 
+  # %User{} -> [%QuoteAlert{}, %QuoteAlert{}, ...]
+  def list_user_quotealerts(%User{} = user) do
+    query = from q in QuoteAlert,
+    where: q.user_id == ^user.id,
+    select: q
+
+    Repo.all(query)
+  end
+
   @doc """
   Gets a single quote_alert.
 
