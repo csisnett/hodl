@@ -14,9 +14,9 @@
       <td><%= quote_alert.price_usd %></td>
 
       <td>
-        <span><%= link "Show", to: Routes.quote_alert_path(@conn, :show, quote_alert) %></span>
-        <span><%= link "Edit", to: Routes.quote_alert_path(@conn, :edit, quote_alert) %></span>
-        <span><%= link "Delete", to: Routes.quote_alert_path(@conn, :delete, quote_alert), method: :delete, data: [confirm: "Are you sure?"] %></span>
+        <span><%= link "Show", to: Routes.quote_alert_path(@conn, :show, quote_alert.uuid) %></span>
+        <span><%= link "Edit", to: Routes.quote_alert_path(@conn, :edit, quote_alert.uuid) %></span>
+        <span><%= link "Delete", to: Routes.quote_alert_path(@conn, :delete, quote_alert.uuid), method: :delete, data: [confirm: "Are you sure?"] %></span>
       </td>
     </tr>
 <% end %>
