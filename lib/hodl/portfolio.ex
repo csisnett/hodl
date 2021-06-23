@@ -1020,8 +1020,8 @@ defmodule Hodl.Portfolio do
   # Returns true if the quote alert should go off, false if it shouldn't
   def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id} = quote_alert) do
     case quote_alert.comparator do
-      "above" -> myquote.price_usd >= quote_alert.price_usd
-      "below" -> myquote.price_usd < quote_alert.price_usd
+      "above" -> Decimal.compare(myquote.price_usd, quote_alert.price_usd) == :gt or Decimal.compare(myquote.price_usd, quote_alert.price_usd) == :eq
+      "below" -> Decimal.compare(myquote.price_usd,  quote_alert.price_usd) == :lt
     end
   end
 
