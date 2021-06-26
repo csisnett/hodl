@@ -1,7 +1,6 @@
 
 <%= csrf_meta_tag() %>
 <div id="app_basic" class="container">
-
 <b-form @submit="onSubmit">
 <h1>New Price alert</h1>
 Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> Current price: {{show_price}} USD  <br> <br>
@@ -11,6 +10,12 @@ Current coin: <b-form-select v-model="selected" :options="options"></b-form-sele
 </div>
 <input type="submit" value="Create alert">
 </b-form>
+<b-modal ref="my-modal" aria-label="Your alert was created successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+      <div class="d-block text-center">
+        <h5>Your alert was created successfully</h5>
+      </div>
+      </b-modal>
+
 </div>
 
 
@@ -42,7 +47,13 @@ var app = new Vue({
         onSubmit(event){
             event.preventDefault();
             create_quote_alert();
-        }
+        },
+        showModal() {
+        this.$refs['my-modal'].show()
+      },
+      hideModal() {
+        this.$refs['my-modal'].hide()
+      },
     },
     watch: {
         selected: function(){
@@ -86,6 +97,7 @@ var app = new Vue({
      console.log(response)
       if (xhr.status == "201") {
         console.log("quote alert created!")
+        app.showModal()
       } else {
         console.log("quote alert wasn't created!");
       }
