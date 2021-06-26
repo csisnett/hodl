@@ -1,26 +1,106 @@
-<h1>Listing Quotealerts</h1>
+<h1>My alerts</h1>
+<%= csrf_meta_tag() %>
+<div id="app_basic" class="container">
+<div style="width: 200px;">
+ <b-card
+        border-variant="primary"
+        header="Bitcoin Alert"
+        header-bg-variant="primary"
+        header-text-variant="white"
+        align="center">
 
-<table>
-  <thead>
-    <tr>
-      <th>Price usd</th>
+        <b-card-text>Trigger: when BTC is higher* than 50000 US$</b-card-text>
+       <a>Edit </a>
+      </b-card>
+<br>
+       <b-card
+        border-variant="primary"
+        header="Dogecoin Inu and dogs and cats Alert"
+        header-bg-variant="primary"
+        header-text-variant="white"
+        align="center">
+        <b-card-text>.</b-card-text>
+      </b-card>
 
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for quote_alert <- @quotealerts do %>
-    <tr>
-      <td><%= quote_alert.price_usd %></td>
+<alert
+v-for="alert in alerts"
+v-bind:header="alert.header"
+v-bind:message="alert.message"
+></alert>
+      </div>
+</div>
 
-      <td>
-        <span><%= link "Show", to: Routes.quote_alert_path(@conn, :show, quote_alert.uuid) %></span>
-        <span><%= link "Edit", to: Routes.quote_alert_path(@conn, :edit, quote_alert.uuid) %></span>
-        <span><%= link "Delete", to: Routes.quote_alert_path(@conn, :delete, quote_alert.uuid), method: :delete, data: [confirm: "Are you sure?"] %></span>
-      </td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
+
+<script>
+function list_alerts(){
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  let data = {};
+  data._csrf_token = csrf_token;
+
+  let json = JSON.stringify(data);
+  let xhr = new XMLHttpRequest();
+  xhr.open("GET", "/user-alerts", true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+	  let response = JSON.parse(xhr.responseText);
+    console.log(response)
+    if (xhr.status == "200") {
+      console.log("Got alerts!")
+      app.alerts = response.quote_alerts
+      } else {
+        console.log("No alerts :(")
+        }
+      }
+  xhr.send(json);
+}
+</script>
+
+<script>
+
+Vue.component('alert', {
+  data: function(){
+    return {
+      count: 0,
+      header_title: 'hello'
+    }
+  },
+  props: ['coin_name', 'coin_symbol', 'comparator', 'email', 'price_usd', 'uuid'],
+  computed: {
+    header_title: function(){
+      let h = `${this.coin_name} alert`;
+      return h;
+    },
+    message: function(){
+      if(this.comparator == "above"){
+        return 'above message'
+      }
+    }
+  },
+  template: '<div> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> </b-card> <br></div>'
+})
+
+var app = new Vue({
+  el: '#app_basic',
+  data: function(){
+    return {
+      example: "true",
+      color: "primary",
+      alerts: [
+        {header: "Bitcoin", message: "Trigger: When BTC is 54000 US$ or higher "},
+        {header: "Ethereum Alert", message: "Trigger: When Ethereum is lower than 2000 US$"}
+      ]
+    }
+  },
+  created: function(){
+    list_alerts();
+  },
+  methods: { add_alert(){
+    let new_alert = {header: "Dogecoin Alert", message: "Trigger: When Doge is higher than 1$"};
+    this.alerts.push(new_alert);
+    }
+  }
+})
+</script>
+
 
 <span><%= link "New Quote alert", to: Routes.quote_alert_path(@conn, :new) %></span>
