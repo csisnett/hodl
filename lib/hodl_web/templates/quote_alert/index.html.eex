@@ -2,9 +2,32 @@
 <%= csrf_meta_tag() %>
 <div id="app_basic" class="container">
 <div style="width: 200px;">
+
+
+<b-modal id="modal-lg" size="lg" v-model="edit_modal">
+<b-form @submit="onSubmit">
+<h1>{{edit_alert.coin_name}} alert</h1>
+Symbol: {{edit_alert.coin_symbol}} <br>  Current price: Put current price here USD  <br> <br>
+<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4>
+ <b-form-select v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
+<input type="text" style="width: 150px;" v-model="edit_alert.price_usd"> US$
+</div>
+<input type="submit" value="Create alert">
+</b-form>
+</b-modal>
+
+
+<b-modal ref="my-modal" aria-label="Your alert was created successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+      <div class="d-block text-center">
+        <h5>Your alert was created successfully</h5>
+      </div>
+      </b-modal>
+
+
+
  <b-card
         border-variant="primary"
-        header="Bitcoin Alert"
+        header="Test Alert"
         header-bg-variant="primary"
         header-text-variant="white"
         align="center">
@@ -13,20 +36,29 @@
        <a>Edit </a>
       </b-card>
 <br>
-       <b-card
-        border-variant="primary"
-        header="Dogecoin Inu and dogs and cats Alert"
-        header-bg-variant="primary"
-        header-text-variant="white"
-        align="center">
-        <b-card-text>.</b-card-text>
-      </b-card>
+<div class="coin_list">
+<%= for coin <- @coins do %>
+<coin
+name="<%= coin.name %>"
+symbol="<%= coin.symbol %>"
+price_usd="<%= coin.price_usd %>"
+uuid="<%= coin.uuid %>"
+>
+<% end %>
+</div>
 
-<alert
-v-for="alert in alerts"
-v-bind:header="alert.header"
-v-bind:message="alert.message"
-></alert>
+<%= for quote_alert <- @quotealerts do %>
+ <alert
+  coin_name="<%= quote_alert.coin_name %>"
+  coin_symbol="<%= quote_alert.coin_symbol %>"
+  comparator="<%= quote_alert.comparator %>"
+  uuid="<%= quote_alert.uuid %>"
+  price_usd="<%= quote_alert.price_usd %>"
+  coin_uuid="<%= quote_alert.coin.uuid %>"
+ >
+
+ </alert>
+<% end %>
       </div>
 </div>
 
@@ -53,18 +85,69 @@ function list_alerts(){
       }
   xhr.send(json);
 }
+
+function get_top_coins(){
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", "/top-coins", true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+        let arr = [{value: null, text: "Select a coin for your alert"}]
+        let coins = arr.concat(response.coins)
+        for (i = 1; i < 101; i++){
+            coins[i]["text"] = coins[i]["name"]
+            coins[i]["value"] = i
+        }
+
+      if (xhr.status == "200") {
+        console.log("Got coins! wow")
+        app.options =  coins;
+        app.selected = 1;
+        app.user_alert_price = app.options[1]["price_usd"]
+
+      } else {
+        console.log("No coins :(")
+        }
+      }
+      xhr.send(json);
+}
 </script>
 
 <script>
 
 Vue.component('alert', {
+  props: ['coin_name', 'comparator', 'coin_symbol', 'price_usd', 'uuid', 'coin_uuid'],
   data: function(){
     return {
-      count: 0,
-      header_title: 'hello'
+      email: ''
+
     }
   },
-  props: ['coin_name', 'coin_symbol', 'comparator', 'email', 'price_usd', 'uuid'],
+  methods: {
+    update_edit_modal(){
+      let comparator_message = ''
+      if(this.comparator == 'above'){
+        comparator_message = 'equal or greater than'
+      } else {
+        comparator_message = 'lower than'
+      }
+      let alert_info = {
+        coin_name: this.coin_name,
+        comparator: comparator_message,
+        coin_symbol: this.coin_symbol,
+        price_usd: this.price_usd,
+        uuid: this.uuid,
+        coin_uuid: this.coin_uuid
+      }
+      app.edit_alert = alert_info;
+      app.edit_modal = true;
+    },
+    test(){
+      console.log('testing the button!')
+    }
+  },
   computed: {
     header_title: function(){
       let h = `${this.coin_name} alert`;
@@ -72,11 +155,13 @@ Vue.component('alert', {
     },
     message: function(){
       if(this.comparator == "above"){
-        return 'above message'
+        return `Trigger: when ${this.coin_symbol} is ${this.price_usd}US$ or higher`
+      } else{
+        return `Trigger: when ${this.coin_symbol} is lower than ${this.price_usd}US$`
       }
     }
   },
-  template: '<div> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> </b-card> <br></div>'
+  template: '<div> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
 })
 
 var app = new Vue({
@@ -85,19 +170,56 @@ var app = new Vue({
     return {
       example: "true",
       color: "primary",
+      edit_modal: false,
+      selected: null,
+      options: [],
+      show_price: '',
+      user_alert_price: null,
+      comparator_options: ["equal or greater than", "lower than"],
+      comparator: "equal or greater than",
       alerts: [
         {header: "Bitcoin", message: "Trigger: When BTC is 54000 US$ or higher "},
         {header: "Ethereum Alert", message: "Trigger: When Ethereum is lower than 2000 US$"}
-      ]
+      ],
+      edit_alert: {},
+      comparator_edit: ''
     }
   },
   created: function(){
     list_alerts();
+    get_top_coins();
   },
-  methods: { add_alert(){
+  methods: {
+    add_alert(){
     let new_alert = {header: "Dogecoin Alert", message: "Trigger: When Doge is higher than 1$"};
     this.alerts.push(new_alert);
+    },
+    onSubmit(event){
+      event.preventDefault();
+    },
+    open_edit_modal(){
+      /* Edit modal info with the alert info */
+      /* Open the modal */
     }
+  },
+  watch: {
+    selected: function(){
+            let price = parseFloat(this.options[this.selected]["price_usd"])
+
+
+            if(price < 0.001) {
+              this.user_alert_price = price.toFixed(5)
+            } else {
+              if(price < 1) {
+                this.user_alert_price = price.toFixed(3)
+                this.show_price = price.toFixed(7)
+              } else {
+              this.show_price = price.toFixed(2)
+              this.user_alert_price = ''
+              }
+            }
+            
+        }
   }
 })
 </script>
