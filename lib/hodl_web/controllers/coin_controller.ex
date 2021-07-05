@@ -36,6 +36,11 @@ defmodule HodlWeb.CoinController do
     json(conn, %{"coins" => coins})
   end
 
+  def these_coins(conn, %{"coin_string" => coin_string}) do
+    coins = Portfolio.list_these_coins(coin_string)
+    json(conn, %{"coins" => coins})
+  end
+
   def edit(conn, %{"id" => id}) do
     coin = Portfolio.get_coin!(id)
     changeset = Portfolio.change_coin(coin)

@@ -36,16 +36,9 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: Put current price here U
        <a>Edit </a>
       </b-card>
 <br>
-<div class="coin_list">
-<%= for coin <- @coins do %>
-<coin
-name="<%= coin.name %>"
-symbol="<%= coin.symbol %>"
-price_usd="<%= coin.price_usd %>"
-uuid="<%= coin.uuid %>"
->
-<% end %>
-</div>
+
+
+<%= javascript_coins(@coins) %>
 
 <%= for quote_alert <- @quotealerts do %>
  <alert
@@ -113,9 +106,72 @@ function get_top_coins(){
       }
       xhr.send(json);
 }
+
+function get_these_coins(){
+  let coin_string = '<%= javascript_coins(@coins) %>'
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  let data = {};
+  data.coin_string = coin_string;
+  data._csrf_token = csrf_token;
+
+  let json = JSON.stringify(data);
+  let xhr = new XMLHttpRequest();
+  xhr.open("POST", "/quotes", true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+	let response = JSON.parse(xhr.responseText);
+    console.log(response)
+  if (xhr.status == "200") {
+    app.coins = response.coins;
+    console.log("Got these quotes! wow")
+    } else {
+      console.log("No coins :(")
+      }
+    }
+  xhr.send(json);
+}
 </script>
 
 <script>
+
+
+Vue.component('coin', {
+  props: ['name', 'symbol', 'price_usd', 'uuid'],
+  data: function(){
+    return {
+      name: this.name,
+      symbol: this.symbol,
+      price_usd: this.price_usd,
+      uuid: this.uuid
+
+    }
+  },
+  created: function(){
+    setTimeout(function() {
+      let current_coins = app.coins
+      let this_coin = {
+        name: this.name,
+        symbol: this.symbol,
+        price_usd: this.price_usd,
+        uuid: this.uuid
+      }
+       current_coins.push(this_coin);
+    }, 3000)
+  },
+  methods: {
+    add_coin_to_app: function(){
+      let current_coins = app.coins
+      let this_coin = {
+        name: this.name,
+        symbol: this.symbol,
+        price_usd: this.price_usd,
+        uuid: this.uuid
+      }
+       app.coins = current_coins.push(this_coin);
+    }
+  },
+  template: '<div> </div>'
+})
 
 Vue.component('alert', {
   props: ['coin_name', 'comparator', 'coin_symbol', 'price_usd', 'uuid', 'coin_uuid'],
@@ -182,12 +238,16 @@ var app = new Vue({
         {header: "Ethereum Alert", message: "Trigger: When Ethereum is lower than 2000 US$"}
       ],
       edit_alert: {},
-      comparator_edit: ''
+      comparator_edit: '',
+      coins: [],
+      coins_uuid: '<%= javascript_coins(@coins) %>'
     }
   },
   created: function(){
     list_alerts();
     get_top_coins();
+    get_these_coins();
+
   },
   methods: {
     add_alert(){

@@ -721,6 +721,8 @@ defmodule Hodl.Portfolio do
     coins_quotes = Enum.map(coins, fn coin -> Map.put(coin, :price_usd, last_quote_price(coin))end)
   end
 
+  # Returns the price USD of the last quote for the coin received
+  # %Coin{} -> Decimal
   def last_quote_price(%Coin{} = coin) do
     query = from q in Quote,
     where: q.coin_id == ^coin.id,
@@ -730,6 +732,13 @@ defmodule Hodl.Portfolio do
     Repo.one(query)
   end
 
+  def put_last_quote_price(%Coin{} = coin) do
+    myquote = last_quote(coin)
+    Map.put(coin, :price_usd, myquote.price_usd)
+  end
+
+  # Returns the last quote of the coin
+  # %Coin{} -> %Quote{}
   def last_quote(%Coin{} = coin) do
     query = from q in Quote,
     where: q.coin_id == ^coin.id,
@@ -739,6 +748,7 @@ defmodule Hodl.Portfolio do
     Repo.one(query)
   end
 
+  # Gets all coins in the first ranking. The coin market cap ranking that is
   def get_top_coins() do
     ranking = Portfolio.get_ranking!(1)
     get_ranking_coins(ranking)
@@ -885,10 +895,59 @@ defmodule Hodl.Portfolio do
   # %User{} -> [%QuoteAlert{}, %QuoteAlert{}, ...]
   def list_user_quotealerts(%User{} = user) do
     query = from q in QuoteAlert,
+    join: c in assoc(q, :coin),
     where: q.user_id == ^user.id,
-    select: q
-
+    preload: [coin: c]
     Repo.all(query)
+  end
+
+  # Base case
+  def make_coin_list([], result) do
+    result
+  end
+
+  # Converts a list of uuids into a list of coins
+  # String -> [%Coin{}]
+  def list_these_coins(coin_string) do
+    uuids = String.split(coin_string, ",")
+    query = from c in Coin,
+    where: c.uuid in ^uuids,
+    select: c
+    Repo.all(query) |> Enum.map(fn coin -> put_last_quote_price(coin) end)
+  end
+
+  def query_u(uuids) do
+    query = from c in Coin,
+    where: c.uuid in ^uuids,
+    select: c
+    Repo.all(query)
+  end
+
+  
+  # [QuoteAlert, ..], [] -> [%Coin{}]
+  # Returns the coins uniquely used in the quote_alerts given
+  def make_coin_list(quote_alerts, result_coins) do
+    [first | rest] = quote_alerts
+    coin = first.coin
+    case Enum.find(result_coins, 0, fn c -> c.uuid == coin.uuid end) do
+      0 ->  #If the coin is not in the result list add it
+        coin = Map.put(coin, :price_usd, last_quote_price(coin))
+         make_coin_list(rest, [coin] ++ result_coins)
+      n -> #Otherwise keep going
+        make_coin_list(rest, result_coins)
+    end
+  end
+
+  # [%User{}] -> [%QuoteAlert{}, ..]
+  # Gets the user quote alerts and each quote alert's coin info
+  # Like list_user_quotealerts but it also adds the quote alert's coin info
+  def list_user_quotealerts_out(%User{} = user) do
+    quote_alerts = list_user_quotealerts(user)
+    |> Enum.map(fn quote_alert ->
+       quote_alert
+       |> Map.put(:coin_name, quote_alert.coin.name) 
+       |> Map.put(:coin_symbol, quote_alert.coin.symbol)
+       |> Map.put(:coin_uuid, quote_alert.coin.uuid) end)
   end
 
   @doc """
@@ -906,6 +965,16 @@ defmodule Hodl.Portfolio do
 
   """
   def get_quote_alert!(id), do: Repo.get!(QuoteAlert, id)
+
+  # Outputs the subject email that will be sent when the quote alert is triggered
+  # %QuoteAlert{} -> String
+  def quote_alert_subject(%QuoteAlert{} = quote_alert) do
+    case quote_alert.comparator do
+      "above" -> "#{quote_alert.coin.name} was equal or higher than #{quote_alert.price_usd} US$"
+
+      "below" -> "#{quote_alert.coin.name} was lower than #{quote_alert.price_usd} US$"
+    end
+  end
 
   @doc """
   Creates a quote_alert.
@@ -1073,7 +1142,7 @@ defmodule Hodl.Portfolio do
   #Sends the email when the alert is triggered
   def send_quote_alert_email(%QuoteAlert{trigger_quote_id: _} = quote_alert) do
     quote_alert = Repo.preload(quote_alert, [:trigger_quote, :coin, :user])
-    email = HodlWeb.UserEmail.alert(quote_alert.user, quote_alert.trigger_quote, quote_alert, "alert was triggered")
+    email = HodlWeb.UserEmail.alert(quote_alert.user, quote_alert.trigger_quote, quote_alert)
     HodlWeb.Pow.Mailer.process(email)
   end
 end

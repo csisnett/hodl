@@ -11,6 +11,11 @@ defmodule HodlWeb.QuoteController do
     render(conn, "index.json", quotes: quotes)
   end
 
+  def these_quotes(conn, %{"coin_string" => coin_string}) do
+    coins = Portfolio.list_these_coins(coin_string)
+    json(conn, %{"coins" => coins})
+  end
+
   def create(conn, %{"quote" => quote_params}) do
     with {:ok, %Quote{} = quote} <- Portfolio.create_quote(quote_params) do
       conn

@@ -62,6 +62,7 @@ defmodule HodlWeb.Router do
   scope "/", HodlWeb do
     pipe_through [:api]
 
+    get "/user-alerts", QuoteAlertController, :my_alerts
     post "/alerts", QuoteAlertController, :create
   end
 
@@ -69,6 +70,7 @@ defmodule HodlWeb.Router do
     pipe_through [:api]
 
     get "/top-coins", CoinController, :top_coins
+    post "/quotes", QuoteController, :these_quotes
     post "/create-hodl", HodlscheduleController, :create
     
     get "/all-hodl", HodlscheduleController, :index
