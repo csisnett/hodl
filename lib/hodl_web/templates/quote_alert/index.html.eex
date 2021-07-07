@@ -4,7 +4,7 @@
 <div style="width: 200px;">
 
 
-<b-modal id="modal-lg" size="lg" v-model="edit_modal" hide-footer="true">
+<b-modal id="modal-lg" size="lg" v-model="edit_modal" ok-only="true" ok-title="Cancel" ok-variant="secondary">
 <b-form method="post" :action="action" >
 <input type="hidden" name="_method" value="put" />
 <input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
