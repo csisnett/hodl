@@ -4,15 +4,17 @@
 <div style="width: 200px;">
 
 
-<b-modal id="modal-lg" size="lg" v-model="edit_modal">
-<b-form @submit="onSubmit">
+<b-modal id="modal-lg" size="lg" v-model="edit_modal" hide-footer="true">
+<b-form method="post" :action="action" >
+<input type="hidden" name="_method" value="put" />
+<input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
 <h1>{{edit_alert.coin_name}} alert</h1>
-Symbol: {{edit_alert.coin_symbol}} <br>  Current price: Put current price here USD  <br> <br>
+Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}} US$  <br> <br>
 <div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4>
- <b-form-select v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
-<input type="text" style="width: 150px;" v-model="edit_alert.price_usd"> US$
+ <b-form-select name="quote_alert[comparator]" v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
+<input type="text" name="quote_alert[price_usd]" style="width: 150px;" v-model="edit_alert.price_usd"> US$
+  <br> <b-button type="submit" value="submit" variant="outline-primary">Save changes</b-button>
 </div>
-<input type="submit" value="Create alert">
 </b-form>
 </b-modal>
 
@@ -130,48 +132,39 @@ function get_these_coins(){
     }
   xhr.send(json);
 }
+
+function update_quote_alert(){
+  let data = {quote_alert: app.edit_alert}
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  data._csrf_token = csrf_token;
+  let base = '/alerts/'
+  let url = base + data.quote_alert.uuid
+
+  let json = JSON.stringify(data);
+  let xhr = new XMLHttpRequest();
+  xhr.open("PUT", url, true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+	let response = JSON.parse(xhr.responseText);
+    console.log(response)
+  if (xhr.status == "200") {
+    console.log("Quote Alert modified! wow")
+    } else {
+      console.log("No modification :(")
+      }
+    }
+  xhr.send(json);
+}
+
+function app_csrf_token(){
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  app.csrf_token = csrf_token;
+}
+
+
 </script>
 
 <script>
-
-
-Vue.component('coin', {
-  props: ['name', 'symbol', 'price_usd', 'uuid'],
-  data: function(){
-    return {
-      name: this.name,
-      symbol: this.symbol,
-      price_usd: this.price_usd,
-      uuid: this.uuid
-
-    }
-  },
-  created: function(){
-    setTimeout(function() {
-      let current_coins = app.coins
-      let this_coin = {
-        name: this.name,
-        symbol: this.symbol,
-        price_usd: this.price_usd,
-        uuid: this.uuid
-      }
-       current_coins.push(this_coin);
-    }, 3000)
-  },
-  methods: {
-    add_coin_to_app: function(){
-      let current_coins = app.coins
-      let this_coin = {
-        name: this.name,
-        symbol: this.symbol,
-        price_usd: this.price_usd,
-        uuid: this.uuid
-      }
-       app.coins = current_coins.push(this_coin);
-    }
-  },
-  template: '<div> </div>'
-})
 
 Vue.component('alert', {
   props: ['coin_name', 'comparator', 'coin_symbol', 'price_usd', 'uuid', 'coin_uuid'],
@@ -189,19 +182,21 @@ Vue.component('alert', {
       } else {
         comparator_message = 'lower than'
       }
+      
+      let coin = app.coins.find(element => element.uuid == this.coin_uuid)
+      console.log(coin)
       let alert_info = {
         coin_name: this.coin_name,
         comparator: comparator_message,
         coin_symbol: this.coin_symbol,
         price_usd: this.price_usd,
         uuid: this.uuid,
-        coin_uuid: this.coin_uuid
+        coin_uuid: this.coin_uuid,
+        coin_price: coin.price_usd
       }
+
       app.edit_alert = alert_info;
       app.edit_modal = true;
-    },
-    test(){
-      console.log('testing the button!')
     }
   },
   computed: {
@@ -240,22 +235,21 @@ var app = new Vue({
       edit_alert: {},
       comparator_edit: '',
       coins: [],
-      coins_uuid: '<%= javascript_coins(@coins) %>'
+      coins_uuid: '<%= javascript_coins(@coins) %>',
+      action: '/alerts/',
+      csrf_token: ''
     }
   },
   created: function(){
     list_alerts();
     get_top_coins();
     get_these_coins();
-
+    app_csrf_token();
   },
   methods: {
     add_alert(){
     let new_alert = {header: "Dogecoin Alert", message: "Trigger: When Doge is higher than 1$"};
     this.alerts.push(new_alert);
-    },
-    onSubmit(event){
-      event.preventDefault();
     },
     open_edit_modal(){
       /* Edit modal info with the alert info */
@@ -279,7 +273,13 @@ var app = new Vue({
               }
             }
             
-        }
+        },
+    edit_alert: function(){
+      let price = parseFloat(this.edit_alert.coin_price)
+      price = price.toFixed(2)
+      this.edit_alert.coin_price = price;
+      this.action = '/alerts/' + this.edit_alert.uuid
+    }
   }
 })
 </script>

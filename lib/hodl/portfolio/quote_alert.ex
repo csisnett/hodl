@@ -5,7 +5,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
   alias Hodl.Portfolio.{Coin, Quote}
 
    
-  @derive {Jason.Encoder, only: [:active?, :comparator, :email, :symbol, :uuid, :price_usd]}
+  @derive {Jason.Encoder, only: [:active?, :comparator, :email, :uuid, :price_usd, :coin_name, :coin_symbol]}
   schema "quotealerts" do
     field :uuid, Ecto.ShortUUID, autogenerate: true
     field :price_usd, :decimal
@@ -14,6 +14,8 @@ defmodule Hodl.Portfolio.QuoteAlert do
     field :comparator, :string # "above" or "below"
     field :email_sent_datetime, :utc_datetime
     belongs_to :trigger_quote, Quote
+    field :coin_name, :string, virtual: true
+    field :coin_symbol, :string, virtual: true
     belongs_to :user, User
     belongs_to :coin, Coin
     timestamps()

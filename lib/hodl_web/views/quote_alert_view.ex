@@ -2,6 +2,11 @@ defmodule HodlWeb.QuoteAlertView do
   use HodlWeb, :view
   alias HodlWeb.QuoteAlertView
 
+  def javascript_coins(coins) do
+    Enum.map(coins, fn coin -> coin.uuid end)
+    |> Enum.join(",")
+  end
+
   def render("index.json", %{quote_alerts: quote_alerts}) do
     %{quote_alerts: render_many(quote_alerts, QuoteAlertView, "quote_alert.json")}
   end

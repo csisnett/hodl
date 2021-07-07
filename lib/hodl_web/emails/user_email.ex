@@ -1,5 +1,6 @@
 defmodule HodlWeb.UserEmail do
     alias Hodl.Users.User
+    alias Hodl.Portfolio
     alias Hodl.Portfolio.{QuoteAlert, Quote}
     use Phoenix.Swoosh, view: HodlWeb.EmailView, layout: {HodlWeb.LayoutView, :email}
   
@@ -11,7 +12,9 @@ defmodule HodlWeb.UserEmail do
       |> render_body("welcome.html", %{username: user.email})
     end
 
-    def alert(%User{} = user,%Quote{} = myquote, %QuoteAlert{} = quote_alert, subject) do
+    def alert(%User{} = user,%Quote{} = myquote, %QuoteAlert{} = quote_alert) do
+    subject = Portfolio.quote_alert_subject(quote_alert)
+
     new()
     |> to({user.username, user.email})
     |> from("daniel@howtohodl.org")

@@ -3,11 +3,20 @@ defmodule HodlWeb.QuoteAlertController do
 
   alias Hodl.Portfolio
   alias Hodl.Portfolio.QuoteAlert
+  require Logger
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    quotealerts = Portfolio.list_user_quotealerts(user)
-    render(conn, "index.html", quotealerts: quotealerts)
+    IO.inspect("#{user.id}")
+    quotealerts = Portfolio.list_user_quotealerts_out(user)
+    coins = Portfolio.make_coin_list(quotealerts, [])
+    render(conn, "index.html", quotealerts: quotealerts, coins: coins)
+  end
+
+  def my_alerts(conn, _params) do
+    user = conn.assigns.current_user
+    quotealerts = Portfolio.list_user_quotealerts_out(user)
+    json(conn, %{"quote_alerts" => quotealerts})
   end
 
   def new(conn, _params) do
@@ -40,10 +49,9 @@ defmodule HodlWeb.QuoteAlertController do
     quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
 
     case Portfolio.update_quote_alert(quote_alert, quote_alert_params) do
-      {:ok, quote_alert} ->
-        conn
-        |> put_flash(:info, "Quote alert updated successfully.")
-        |> redirect(to: Routes.quote_alert_path(conn, :show, quote_alert))
+      {:ok, quote_alert} -> 
+        conn = conn |> put_flash(:info, "Alert modified successfully.")
+        redirect(conn, to: "/alerts")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", quote_alert: quote_alert, changeset: changeset)

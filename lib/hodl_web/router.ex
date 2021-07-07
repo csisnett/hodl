@@ -48,8 +48,8 @@ defmodule HodlWeb.Router do
 
     resources "/alerts", QuoteAlertController, except: [:show, :edit, :update, :delete, :new, :create]
     get "/alerts/:uuid", QuoteAlertController, :show
-    get "/alerts/:uuid/edit", QuoteAlertController, :edit
     put "/alerts/:uuid", QuoteAlertController, :update
+    get "/alerts/:uuid/edit", QuoteAlertController, :edit
     delete "/alerts/:uuid", QuoteAlertController, :delete
   end
 
