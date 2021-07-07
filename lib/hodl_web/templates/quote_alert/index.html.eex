@@ -13,34 +13,24 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 <div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4>
  <b-form-select name="quote_alert[comparator]" v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
 <input type="text" name="quote_alert[price_usd]" style="width: 150px;" v-model="edit_alert.price_usd"> US$
-  <br> <b-button type="submit" value="submit" variant="outline-primary">Save changes</b-button>
+  <br> <b-button variant="outline-danger" @click="delete_alert_modal = true"> Delete alert </b-button> <b-button type="submit" value="submit" variant="outline-primary">Save changes</b-button>
+  
 </div>
 </b-form>
 </b-modal>
 
+<b-modal size="sm" modal-header="hello" v-model="delete_alert_modal" hide-footer="true">
+   <template #modal-header="{ close }">
+   <h4> Are you sure you want to delete this alert? </h4>
+    </template>
 
-<b-modal ref="my-modal" aria-label="Your alert was created successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
-      <div class="d-block text-center">
-        <h5>Your alert was created successfully</h5>
-      </div>
-      </b-modal>
+<b-form method="post" :action="action" >
+<input type="hidden" name="_method" value="delete" />
+<input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+<b-button type="submit" value="submit" variant="outline-danger"> Yes, delete this alert </b-button> <b-button v-on:click="delete_alert_modal = false"variant="secondary">Cancel</b-button>
+</b-form>
+</b-modal>
 
-
-
- <b-card
-        border-variant="primary"
-        header="Test Alert"
-        header-bg-variant="primary"
-        header-text-variant="white"
-        align="center">
-
-        <b-card-text>Trigger: when BTC is higher* than 50000 US$</b-card-text>
-       <a>Edit </a>
-      </b-card>
-<br>
-
-
-<%= javascript_coins(@coins) %>
 
 <%= for quote_alert <- @quotealerts do %>
  <alert
@@ -206,9 +196,9 @@ Vue.component('alert', {
     },
     message: function(){
       if(this.comparator == "above"){
-        return `Trigger: when ${this.coin_symbol} is ${this.price_usd}US$ or higher`
+        return `Trigger when ${this.coin_symbol} is ${this.price_usd} US$ or higher`
       } else{
-        return `Trigger: when ${this.coin_symbol} is lower than ${this.price_usd}US$`
+        return `Trigger when ${this.coin_symbol} is lower than ${this.price_usd} US$`
       }
     }
   },
@@ -237,7 +227,8 @@ var app = new Vue({
       coins: [],
       coins_uuid: '<%= javascript_coins(@coins) %>',
       action: '/alerts/',
-      csrf_token: ''
+      csrf_token: '',
+      delete_alert_modal: false
     }
   },
   created: function(){

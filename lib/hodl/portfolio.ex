@@ -896,7 +896,7 @@ defmodule Hodl.Portfolio do
   def list_user_quotealerts(%User{} = user) do
     query = from q in QuoteAlert,
     join: c in assoc(q, :coin),
-    where: q.user_id == ^user.id,
+    where: q.user_id == ^user.id and q.deleted? == false,
     preload: [coin: c]
     Repo.all(query)
   end
@@ -1032,6 +1032,11 @@ defmodule Hodl.Portfolio do
       {:error, %Ecto.Changeset{}}
 
   """
+
+  def soft_delete_quote_alert(%QuoteAlert{} = quote_alert) do
+    update_quote_alert(quote_alert, %{"deleted?" => true})
+  end
+
   def delete_quote_alert(%QuoteAlert{} = quote_alert) do
     Repo.delete(quote_alert)
   end
@@ -1059,9 +1064,11 @@ defmodule Hodl.Portfolio do
     Repo.get_by(User, id: 1)
   end
 
+  # Gets the active quote alerts to be used every time we check quote prices changes
+  # It must an alert that the user has as active + it hasn't been triggered + the user hasn't deleted
   def list_active_quote_alerts() do
     query = from q in QuoteAlert,
-    where: q.active? == true and is_nil(q.trigger_quote_id),
+    where: q.active? == true and is_nil(q.trigger_quote_id) and q.deleted? == false,
     select: q
     Repo.all(query)
   end

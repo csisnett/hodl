@@ -60,10 +60,10 @@ defmodule HodlWeb.QuoteAlertController do
 
   def delete(conn, %{"uuid" => uuid}) do
     quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
-    {:ok, _quote_alert} = Portfolio.delete_quote_alert(quote_alert)
+    {:ok, _quote_alert} = Portfolio.soft_delete_quote_alert(quote_alert)
 
     conn
-    |> put_flash(:info, "Quote alert deleted successfully.")
+    |> put_flash(:info, "Alert deleted successfully.")
     |> redirect(to: Routes.quote_alert_path(conn, :index))
   end
 end
