@@ -11,6 +11,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
     field :price_usd, :decimal
     field :email, :string
     field :active?, :boolean, default: true
+    field :deleted?, :boolean, default: false
     field :comparator, :string # "above" or "below"
     field :email_sent_datetime, :utc_datetime
     belongs_to :trigger_quote, Quote
@@ -40,7 +41,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
   @doc false
   def changeset(quote_alert, attrs) do
     quote_alert
-    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id])
+    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
     |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id])
     |> adjust_comparator()
     |> validate_comparator()
@@ -50,8 +51,8 @@ defmodule Hodl.Portfolio.QuoteAlert do
 
   def update_changeset(quote_alert, attrs) do
     quote_alert
-    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id])
-    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id])
+    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
+    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id, :deleted?])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:coin_id)
     |> foreign_key_constraint(:trigger_quote_id)
