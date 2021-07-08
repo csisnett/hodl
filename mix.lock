@@ -1,4 +1,5 @@
 %{
+  "bodyguard": {:hex, :bodyguard, "2.4.1", "223df8fa7ac6bd9acd959054aebc386738d3d458fbc02703dd3df341467e3ff6", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm", "8f570352941d4e43c0f795e4a27c58cb252ee9acdfae6ea16fcd17d12df995f7"},
   "certifi": {:hex, :certifi, "2.5.3", "70bdd7e7188c804f3a30ee0e7c99655bc35d8ac41c23e12325f36ab449b70651", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm", "ed516acb3929b101208a9d700062d520f3953da3b6b918d866106ffa980e1c10"},
   "connection": {:hex, :connection, "1.1.0", "ff2a49c4b75b6fb3e674bfc5536451607270aac754ffd1bdfe175abe4a6d7a68", [:mix], [], "hexpm", "722c1eb0a418fbe91ba7bd59a47e28008a189d47e37e0e7bb85585a016b2869c"},
   "cors_plug": {:hex, :cors_plug, "2.0.3", "316f806d10316e6d10f09473f19052d20ba0a0ce2a1d910ddf57d663dac402ae", [:mix], [{:plug, "~> 1.8", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm", "ee4ae1418e6ce117fc42c2ba3e6cbdca4e95ecd2fe59a05ec6884ca16d469aea"},

@@ -54,7 +54,8 @@ defmodule Hodl.MixProject do
       {:swoosh, "~> 1.3.11"},
       {:cors_plug, "~> 2.0"},
       {:phoenix_swoosh, "~> 0.3"},
-      {:decimal, "~> 2.0"}
+      {:decimal, "~> 2.0"},
+      {:bodyguard, "~> 2.4"}
     ]
   end
 
