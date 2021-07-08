@@ -6,6 +6,7 @@ defmodule Hodl.Users.User do
 
   schema "users" do
     field :username, :string
+    field :role, :string, default: "regular"
     pow_user_fields()
 
     timestamps()
