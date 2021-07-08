@@ -119,6 +119,15 @@ defmodule Hodl.Accounts do
     Setting.changeset(setting, attrs)
   end
 
+  # User -> String
+  # Receives an user outputs the user's timezone
+  def get_user_timezone(%User{} = user) do
+    setting = Repo.one(from s in Setting,
+     where: s.user_id == ^user.id and s.setting_key == "timezone",
+     select: s)
+    setting.value
+  end
+
   alias Hodl.Accounts.Plan
 
   @doc """
@@ -166,6 +175,11 @@ defmodule Hodl.Accounts do
     %Plan{}
     |> Plan.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def run_plans() do
+    {:ok, free_plan} = create_plan(%{"name" => "free", "email_limit" => 5, "sms_limit" => 0})
+    {:ok, paid_plan} = create_plan(%{"name" => "platinum", "email_limit" => 1_000_000, "sms_limit" => 100})
   end
 
   @doc """
@@ -262,6 +276,22 @@ defmodule Hodl.Accounts do
     %Subscription{}
     |> Subscription.changeset(attrs)
     |> Repo.insert()
+  end
+
+  # User -> Subscription || nil
+  # Receives a user and outputs the user's last subscription or nil if it doesn't have any
+  def current_user_subscription(%User{} = user) do
+    last_subscription_query = 
+    from s in Subscription,
+    where: s.user_id == ^user.id and is_nil(s.left_at),
+    select: s
+    Repo.one(last_subscription_query)
+  end
+
+  # User, Plan -> Subscription
+  # Subscribes the given user to the plan given
+  def subscribe_user_to_plan(%User{} = user, %Plan{} = plan) do
+    plan
   end
 
   @doc """

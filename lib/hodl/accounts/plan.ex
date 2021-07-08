@@ -15,6 +15,6 @@ defmodule Hodl.Accounts.Plan do
   def changeset(plan, attrs) do
     plan
     |> cast(attrs, [:name, :description, :email_limit, :sms_limit])
-    |> validate_required([:name, :description, :email_limit, :sms_limit])
+    |> validate_required([:name, :email_limit, :sms_limit])
   end
 end
