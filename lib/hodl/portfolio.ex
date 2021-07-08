@@ -1014,10 +1014,20 @@ defmodule Hodl.Portfolio do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_quote_alert(%QuoteAlert{} = quote_alert, attrs) do
+
+  # Must only be called when we have verified or know for sure the caller's authorization
+  defp update_quote_alert(%QuoteAlert{} = quote_alert, attrs) do
     quote_alert
     |> QuoteAlert.update_changeset(attrs)
     |> Repo.update()
+  end
+
+  # For use for regular users
+  # QuoteAlert, Map, User -> Tuple -- {:ok, QuoteAlert} || {:error, QuoteAlert}
+  def update_quote_alert(%QuoteAlert{} = quote_alert, attrs, %User{} = user) do
+    with :ok <- Bodyguard.permit(Portfolio.Policy, :update_quote_alert, user, quote_alert) do
+      update_quote_alert(quote_alert, attrs)
+    end
   end
 
   @doc """
@@ -1033,10 +1043,14 @@ defmodule Hodl.Portfolio do
 
   """
 
-  def soft_delete_quote_alert(%QuoteAlert{} = quote_alert) do
-    update_quote_alert(quote_alert, %{"deleted?" => true})
+  # Soft deletes the quote alert
+  def soft_delete_quote_alert(%QuoteAlert{} = quote_alert, %User{} = user) do
+    with :ok <- Bodyguard.permit(Portfolio.Policy, :soft_delete_alert, user, quote_alert) do
+      update_quote_alert(quote_alert, %{"deleted?" => true})
+    end
   end
 
+  # Deletes the quote alert permanently. Use only for internal purposes
   def delete_quote_alert(%QuoteAlert{} = quote_alert) do
     Repo.delete(quote_alert)
   end

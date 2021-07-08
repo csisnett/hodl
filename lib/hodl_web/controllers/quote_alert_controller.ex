@@ -46,9 +46,10 @@ defmodule HodlWeb.QuoteAlertController do
   end
 
   def update(conn, %{"uuid" => uuid, "quote_alert" => quote_alert_params}) do
+    user = conn.assigns.current_user
     quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
 
-    case Portfolio.update_quote_alert(quote_alert, quote_alert_params) do
+    case Portfolio.update_quote_alert(quote_alert, quote_alert_params, user) do
       {:ok, quote_alert} -> 
         conn = conn |> put_flash(:info, "Alert modified successfully.")
         redirect(conn, to: "/alerts")
@@ -59,8 +60,9 @@ defmodule HodlWeb.QuoteAlertController do
   end
 
   def delete(conn, %{"uuid" => uuid}) do
+    user = conn.assigns.current_user
     quote_alert = Portfolio.get_quote_alert_by_uuid(uuid)
-    {:ok, _quote_alert} = Portfolio.soft_delete_quote_alert(quote_alert)
+    {:ok, _quote_alert} = Portfolio.soft_delete_quote_alert(quote_alert, user)
 
     conn
     |> put_flash(:info, "Alert deleted successfully.")
