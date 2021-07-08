@@ -63,4 +63,128 @@ defmodule Hodl.AccountsTest do
       assert %Ecto.Changeset{} = Accounts.change_setting(setting)
     end
   end
+
+  describe "plans" do
+    alias Hodl.Accounts.Plan
+
+    @valid_attrs %{description: "some description", email_limit: 42, name: "some name", sms_limit: 42}
+    @update_attrs %{description: "some updated description", email_limit: 43, name: "some updated name", sms_limit: 43}
+    @invalid_attrs %{description: nil, email_limit: nil, name: nil, sms_limit: nil}
+
+    def plan_fixture(attrs \\ %{}) do
+      {:ok, plan} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Accounts.create_plan()
+
+      plan
+    end
+
+    test "list_plans/0 returns all plans" do
+      plan = plan_fixture()
+      assert Accounts.list_plans() == [plan]
+    end
+
+    test "get_plan!/1 returns the plan with given id" do
+      plan = plan_fixture()
+      assert Accounts.get_plan!(plan.id) == plan
+    end
+
+    test "create_plan/1 with valid data creates a plan" do
+      assert {:ok, %Plan{} = plan} = Accounts.create_plan(@valid_attrs)
+      assert plan.description == "some description"
+      assert plan.email_limit == 42
+      assert plan.name == "some name"
+      assert plan.sms_limit == 42
+    end
+
+    test "create_plan/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_plan(@invalid_attrs)
+    end
+
+    test "update_plan/2 with valid data updates the plan" do
+      plan = plan_fixture()
+      assert {:ok, %Plan{} = plan} = Accounts.update_plan(plan, @update_attrs)
+      assert plan.description == "some updated description"
+      assert plan.email_limit == 43
+      assert plan.name == "some updated name"
+      assert plan.sms_limit == 43
+    end
+
+    test "update_plan/2 with invalid data returns error changeset" do
+      plan = plan_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_plan(plan, @invalid_attrs)
+      assert plan == Accounts.get_plan!(plan.id)
+    end
+
+    test "delete_plan/1 deletes the plan" do
+      plan = plan_fixture()
+      assert {:ok, %Plan{}} = Accounts.delete_plan(plan)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_plan!(plan.id) end
+    end
+
+    test "change_plan/1 returns a plan changeset" do
+      plan = plan_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_plan(plan)
+    end
+  end
+
+  describe "subscriptions" do
+    alias Hodl.Accounts.Subscription
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def subscription_fixture(attrs \\ %{}) do
+      {:ok, subscription} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Accounts.create_subscription()
+
+      subscription
+    end
+
+    test "list_subscriptions/0 returns all subscriptions" do
+      subscription = subscription_fixture()
+      assert Accounts.list_subscriptions() == [subscription]
+    end
+
+    test "get_subscription!/1 returns the subscription with given id" do
+      subscription = subscription_fixture()
+      assert Accounts.get_subscription!(subscription.id) == subscription
+    end
+
+    test "create_subscription/1 with valid data creates a subscription" do
+      assert {:ok, %Subscription{} = subscription} = Accounts.create_subscription(@valid_attrs)
+      assert subscription.name == "some name"
+    end
+
+    test "create_subscription/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_subscription(@invalid_attrs)
+    end
+
+    test "update_subscription/2 with valid data updates the subscription" do
+      subscription = subscription_fixture()
+      assert {:ok, %Subscription{} = subscription} = Accounts.update_subscription(subscription, @update_attrs)
+      assert subscription.name == "some updated name"
+    end
+
+    test "update_subscription/2 with invalid data returns error changeset" do
+      subscription = subscription_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_subscription(subscription, @invalid_attrs)
+      assert subscription == Accounts.get_subscription!(subscription.id)
+    end
+
+    test "delete_subscription/1 deletes the subscription" do
+      subscription = subscription_fixture()
+      assert {:ok, %Subscription{}} = Accounts.delete_subscription(subscription)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_subscription!(subscription.id) end
+    end
+
+    test "change_subscription/1 returns a subscription changeset" do
+      subscription = subscription_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_subscription(subscription)
+    end
+  end
 end
