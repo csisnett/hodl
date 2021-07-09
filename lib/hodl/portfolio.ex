@@ -1018,7 +1018,7 @@ defmodule Hodl.Portfolio do
   # Must only be called when we have verified or know for sure the caller's authorization
   defp update_quote_alert(%QuoteAlert{} = quote_alert, attrs) do
     quote_alert
-    |> QuoteAlert.update_changeset(attrs)
+    |> QuoteAlert.changeset(attrs)
     |> Repo.update()
   end
 
@@ -1045,8 +1045,8 @@ defmodule Hodl.Portfolio do
 
   # Soft deletes the quote alert
   def soft_delete_quote_alert(%QuoteAlert{} = quote_alert, %User{} = user) do
-    with :ok <- Bodyguard.permit(Portfolio.Policy, :soft_delete_alert, user, quote_alert) do
-      update_quote_alert(quote_alert, %{"deleted?" => true})
+    with :ok <- Bodyguard.permit(Portfolio.Policy, :soft_delete_quote_alert, user, quote_alert) do
+      QuoteAlert.delete_changeset(quote_alert, %{"deleted?" => true}) |> Repo.update()
     end
   end
 

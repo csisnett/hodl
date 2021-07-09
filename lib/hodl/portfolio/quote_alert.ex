@@ -42,19 +42,17 @@ defmodule Hodl.Portfolio.QuoteAlert do
   def changeset(quote_alert, attrs) do
     quote_alert
     |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
-    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id])
+    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id, :deleted?])
     |> adjust_comparator()
     |> validate_comparator()
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:coin_id)
   end
 
-  def update_changeset(quote_alert, attrs) do
+  def delete_changeset(quote_alert, attrs) do
     quote_alert
     |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
     |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id, :deleted?])
-    |> adjust_comparator()
-    |> validate_comparator()
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:coin_id)
     |> foreign_key_constraint(:trigger_quote_id)
