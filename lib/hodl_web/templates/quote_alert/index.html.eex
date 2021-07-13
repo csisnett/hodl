@@ -1,7 +1,7 @@
 <h1>My alerts</h1>
 <%= csrf_meta_tag() %>
 <div id="app_basic" class="container">
-<div style="width: 200px;">
+<div style="width: 700px;">
 
 
 <b-modal id="modal-lg" size="lg" v-model="edit_modal" ok-only="true" ok-title="Cancel" ok-variant="secondary">
@@ -10,9 +10,13 @@
 <input name="_csrf_token" type="hidden" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
 <h1>{{edit_alert.coin_name}} alert</h1>
 Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}} US$  <br> <br>
-<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4>
- <b-form-select name="quote_alert[comparator]" v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
-<input type="text" name="quote_alert[price_usd]" style="width: 150px;" v-model="edit_alert.price_usd"> US$
+<b-container>
+<b-row>
+    <b-col sm="8">  <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4> </b-col>
+    <b-form-select style="width: 300px;"name="quote_alert[comparator]" v-model="edit_alert.comparator" :options="comparator_options"></b-form-select> </b-col>
+    <b-col sm> <input type="text" name="quote_alert[price_usd]" style="width: 150px;" v-model="edit_alert.price_usd"> US$ </b-col>
+</b-row>
+</b-container>
   <br> <br> <b-button type="submit" value="submit" style="float: center;" variant="outline-primary">Save changes</b-button> <b-button variant="outline-danger"  @click="delete_alert_modal = true"> Delete alert </b-button>
   
 
@@ -31,9 +35,12 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 <b-button type="submit" value="submit" variant="outline-danger"> Yes, delete this alert </b-button> <b-button v-on:click="delete_alert_modal = false"variant="secondary">Cancel</b-button>
 </b-form>
 </b-modal>
-
-
+<hr>
+<h3> Bitcoin alerts </h3>
+<b-container >
+<b-row>
 <%= for quote_alert <- @quotealerts do %>
+  <b-col cols="4">
  <alert
   coin_name="<%= quote_alert.coin_name %>"
   coin_symbol="<%= quote_alert.coin_symbol %>"
@@ -44,7 +51,10 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
  >
 
  </alert>
+ </b-col>
 <% end %>
+</b-row>
+</b-container>
       </div>
 </div>
 
