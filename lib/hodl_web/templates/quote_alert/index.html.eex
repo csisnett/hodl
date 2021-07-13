@@ -13,8 +13,9 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 <div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{edit_alert.coin_name}} is </h4>
  <b-form-select name="quote_alert[comparator]" v-model="edit_alert.comparator" :options="comparator_options"></b-form-select>
 <input type="text" name="quote_alert[price_usd]" style="width: 150px;" v-model="edit_alert.price_usd"> US$
-  <br> <b-button type="submit" value="submit" style="float: center;" variant="outline-primary">Save changes</b-button>
-  <br> <br> <b-button variant="outline-danger"  @click="delete_alert_modal = true"> Delete alert </b-button>
+  <br> <br> <b-button type="submit" value="submit" style="float: center;" variant="outline-primary">Save changes</b-button> <b-button variant="outline-danger"  @click="delete_alert_modal = true"> Delete alert </b-button>
+  
+
 </div>
 </b-form>
 </b-modal>
