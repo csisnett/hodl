@@ -38,7 +38,7 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 <hr>
 <h3 style="text-align: center;"> Bitcoin alerts </h3>
 <b-container >
-<b-row>
+<b-row style="min-width: 600px; position: relative;">
 <%= for quote_alert <- @quotealerts do %>
   <b-col cols="4">
  <alert
@@ -213,7 +213,7 @@ Vue.component('alert', {
       }
     }
   },
-  template: '<div style="width: 200px; margin-right: 50px; margin-left: 50px;"> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
+  template: '<div style="width: 200px;"> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
 })
 
 var app = new Vue({
