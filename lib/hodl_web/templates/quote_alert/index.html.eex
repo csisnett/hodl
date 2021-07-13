@@ -1,7 +1,7 @@
 <h1>My alerts</h1>
 <%= csrf_meta_tag() %>
 <div id="app_basic" class="container">
-<div style="width: 700px;">
+<div style="width: 800px;">
 
 
 <b-modal id="modal-lg" size="lg" v-model="edit_modal" ok-only="true" ok-title="Cancel" ok-variant="secondary">
@@ -36,7 +36,7 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 </b-form>
 </b-modal>
 <hr>
-<h3> Bitcoin alerts </h3>
+<h3 style="text-align: center;"> Bitcoin alerts </h3>
 <b-container >
 <b-row>
 <%= for quote_alert <- @quotealerts do %>
@@ -213,7 +213,7 @@ Vue.component('alert', {
       }
     }
   },
-  template: '<div> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
+  template: '<div style="width: 200px; margin-right: 50px; margin-left: 50px;"> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
 })
 
 var app = new Vue({
