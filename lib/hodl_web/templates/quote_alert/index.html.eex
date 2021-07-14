@@ -36,25 +36,7 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 </b-form>
 </b-modal>
 <hr>
-<h3 style="text-align: center;"> Bitcoin alerts </h3>
-<b-container >
-<b-row style="min-width: 600px; position: relative;">
-<%= for quote_alert <- @quotealerts do %>
-  <b-col cols="4">
- <alert
-  coin_name="<%= quote_alert.coin_name %>"
-  coin_symbol="<%= quote_alert.coin_symbol %>"
-  comparator="<%= quote_alert.comparator %>"
-  uuid="<%= quote_alert.uuid %>"
-  price_usd="<%= quote_alert.price_usd %>"
-  coin_uuid="<%= quote_alert.coin.uuid %>"
- >
-
- </alert>
- </b-col>
-<% end %>
-</b-row>
-</b-container>
+<%= output_alerts(@quotealerts) %>
       </div>
 </div>
 
