@@ -25,7 +25,7 @@ defmodule HodlWeb.Endpoint do
     at: "/",
     from: :hodl,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt description.pdf)
+    only: ~w(css fonts images js favicon.ico robots.txt description-of-product.pdf)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
