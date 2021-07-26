@@ -489,6 +489,8 @@ defmodule Hodl.Portfolio do
     data
   end
 
+    # Integer -> Map
+    # From the coin's coin_market)cap_id returns a map with the coin's latest quote price
   def get_coin_quote(coinmarketcap_id) do
     ids = Integer.to_string(coinmarketcap_id)
     api_key = System.get_env("MARKETCAP_KEY")
@@ -687,6 +689,7 @@ defmodule Hodl.Portfolio do
     from(c in Coinrank, where: c.ranking_id == ^id) |> Repo.delete_all
   end
 
+  # Prepares attrs for the Coinrank CMC rank 
   def prepare_for_coinrank_creation(%Coin{} = coin, %Ranking{} = ranking) do
     %{"position" => coin["cmc_rank"], "coin_id" => coin.id, "ranking_id" => ranking.id}
   end
@@ -696,6 +699,8 @@ defmodule Hodl.Portfolio do
     Enum.each(coins, fn coin -> prepare_for_coinrank_creation(coin, ranking) |> create_coinrank() end)
   end
 
+  # %Ranking{} -> [%Coinrank{}, ...]
+  # Allow us to update only the CMC rank with info from Coin Market Cap
   def update_ranks(%Ranking{} = ranking) do
     cmc_coins = get_top_quotes()
 
@@ -705,6 +710,9 @@ defmodule Hodl.Portfolio do
     end)
   end
 
+
+  # %Ranking{} -> [%Coin{}, ...]
+  # Gets all the coins of a ranking
   def get_ranking_coins(%Ranking{} = ranking) do
     query = from c in Coin,
     inner_join: cr in Coinrank,
@@ -715,6 +723,8 @@ defmodule Hodl.Portfolio do
     Repo.all(query)
   end
 
+  # -> [%Quote{}, ...]
+  # Gets the latest quotes from the coins in the CMC rank
   def get_top_coins_quotes() do
     ranking = Portfolio.get_ranking!(1)
     coins = get_ranking_coins(ranking)
@@ -732,6 +742,8 @@ defmodule Hodl.Portfolio do
     Repo.one(query)
   end
 
+  # %Coin{} -> %Coin{price_usd: _}
+  # Puts the last quote price for that coin in the struct
   def put_last_quote_price(%Coin{} = coin) do
     myquote = last_quote(coin)
     Map.put(coin, :price_usd, myquote.price_usd)
@@ -748,7 +760,7 @@ defmodule Hodl.Portfolio do
     Repo.one(query)
   end
 
-  # Gets all coins in the first ranking. The coin market cap ranking that is
+  # Gets all coins of the first ranking. The coin market cap ranking that is
   def get_top_coins() do
     ranking = Portfolio.get_ranking!(1)
     get_ranking_coins(ranking)
@@ -893,6 +905,7 @@ defmodule Hodl.Portfolio do
   end
 
   # %User{} -> [%QuoteAlert{}, %QuoteAlert{}, ...]
+  # Gets all
   def list_user_quotealerts(%User{} = user) do
     query = from q in QuoteAlert,
     join: c in assoc(q, :coin),
@@ -901,13 +914,9 @@ defmodule Hodl.Portfolio do
     Repo.all(query)
   end
 
-  # Base case
-  def make_coin_list([], result) do
-    result
-  end
 
+  # String -> [%Coin{}, %Coin{}, ...]
   # Converts a list of uuids into a list of coins
-  # String -> [%Coin{}]
   def list_these_coins(coin_string) do
     uuids = String.split(coin_string, ",")
     query = from c in Coin,
@@ -916,16 +925,13 @@ defmodule Hodl.Portfolio do
     Repo.all(query) |> Enum.map(fn coin -> put_last_quote_price(coin) end)
   end
 
-  def query_u(uuids) do
-    query = from c in Coin,
-    where: c.uuid in ^uuids,
-    select: c
-    Repo.all(query)
+    # Base case for the next one
+  def make_coin_list([], result) do
+    result
   end
 
-  
   # [QuoteAlert, ..], [] -> [%Coin{}]
-  # Returns the coins uniquely used in the quote_alerts given
+  # Returns each coin once used in the quote_alerts given
   def make_coin_list(quote_alerts, result_coins) do
     [first | rest] = quote_alerts
     coin = first.coin
@@ -965,6 +971,12 @@ defmodule Hodl.Portfolio do
 
   """
   def get_quote_alert!(id), do: Repo.get!(QuoteAlert, id)
+
+
+  # String -> %QuoteAlert{}
+  def get_quote_alert_by_uuid(uuid) do
+    Repo.get_by(QuoteAlert, uuid: uuid)
+  end
 
   # Outputs the subject email that will be sent when the quote alert is triggered
   # %QuoteAlert{} -> String
@@ -1087,34 +1099,6 @@ defmodule Hodl.Portfolio do
     Repo.all(query)
   end
 
-  def get_first_quotes() do
-    query = from q in Quote,
-    where: q.coin_id == 11266,
-    select: q
-    Repo.all(query)
-  end
-
-  def get_first_quotealerts() do
-    query = from q in QuoteAlert,
-    where: q.coin_id == 11266,
-    select: q
-    Repo.all(query)
-  end
-
-  def get_second_quotealerts() do
-    query = from q in QuoteAlert,
-    where: q.coin_id == 11026,
-    select: q
-    Repo.all(query)
-  end
-
-  def get_second_quotes() do
-    query = from q in Quote,
-    where: q.coin_id == 11026,
-    select: q
-    Repo.all(query)
-  end
-
   # Quote, QuoteAlert -> Boolean
   # Returns true if the quote alert should go off, false if it shouldn't
   def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id} = quote_alert) do
@@ -1124,10 +1108,6 @@ defmodule Hodl.Portfolio do
     end
   end
 
-  # String -> %QuoteAlert{}
-  def get_quote_alert_by_uuid(uuid) do
-    Repo.get_by(QuoteAlert, uuid: uuid)
-  end
 
   # Quote, [QuoteAlert{}] -> [QuoteAlert{}]
   # For the coin in Quote return all the respective Quote Alerts that need to go off

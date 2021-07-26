@@ -177,7 +177,7 @@ defmodule Hodl.Accounts do
     |> Repo.insert()
   end
 
-  def run_plans() do
+  def create_plans() do
     {:ok, free_plan} = create_plan(%{"name" => "free", "email_limit" => 5, "sms_limit" => 0})
     {:ok, paid_plan} = create_plan(%{"name" => "platinum", "email_limit" => 1_000_000, "sms_limit" => 100})
   end
