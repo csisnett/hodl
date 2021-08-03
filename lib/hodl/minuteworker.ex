@@ -5,7 +5,7 @@ defmodule Hodl.MinuteWorker do
       priority: 1,
       max_attempts: 10,
       tags: ["business"],
-      unique: [fields: [:queue, :worker], period: 120]
+      unique: [fields: [:queue, :worker]]
 
     @impl Oban.Worker
     def perform(%Oban.Job{attempt: attempt}) when attempt > 3 do
