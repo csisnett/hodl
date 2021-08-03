@@ -3,7 +3,7 @@ defmodule Hodl.MinuteWorker do
     use Oban.Worker,
       queue: :repetitive,
       priority: 1,
-      max_attempts: 10,
+      max_attempts: 5,
       tags: ["business"],
       unique: [fields: [:queue, :worker]]
 
