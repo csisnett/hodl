@@ -5,8 +5,8 @@ defmodule Hodl.MinuteWorker do
       priority: 1,
       max_attempts: 10,
       tags: ["business"],
-      unique: [period: 30]
-  
+      unique: [fields: [:queue, :worker], period: 30]
+
     @impl Oban.Worker
     def perform(%Oban.Job{attempt: attempt}) when attempt > 3 do
 
@@ -17,7 +17,7 @@ defmodule Hodl.MinuteWorker do
       Portfolio.initiate_quote_retrieval()
       :ok
     end
-  
+
     def perform(job) do
       case Application.fetch_env!(:hodl, :development) do
         "false" ->
