@@ -3,12 +3,12 @@ defmodule Hodl.MinuteWorker do
     use Oban.Worker,
       queue: :repetitive,
       priority: 1,
-      max_attempts: 5,
+      max_attempts: 2,
       tags: ["business"],
       unique: [fields: [:queue, :worker]]
 
     @impl Oban.Worker
-    def perform(%Oban.Job{attempt: attempt}) when attempt > 3 do
+    def perform(%Oban.Job{attempt: attempt}) when attempt > 1 do
 
       message = "This is attempt # #{attempt}!"
       IO.inspect(message)
