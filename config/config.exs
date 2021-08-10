@@ -46,7 +46,7 @@ config :hodl, Oban,
 repo: Hodl.Repo,
 plugins: [Oban.Plugins.Pruner,Oban.Plugins.Stager, {Oban.Plugins.Cron,
 crontab: [
-  {"*/5 * * * *", Hodl.MinuteWorker},
+  {System.get_env("MINUTE_WORKER_FREQUENCY"), Hodl.MinuteWorker},
 ]}],
 queues: [repetitive: [limit: 3], emails: [limit: 3]]
 
