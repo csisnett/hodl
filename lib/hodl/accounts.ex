@@ -304,6 +304,29 @@ defmodule Hodl.Accounts do
     |> create_subscription()
   end
 
+  # %User{}, %Plan{} -> {:ok, {:ok, %Subscription{}}} || Some sort of error
+  # Finishes the current subscription of the user and creates a new subscription for the new plan
+  def change_user_to_plan(%User{} = user, %Plan{} = plan) do
+    current_subscription = current_user_subscription(user)
+
+    user_timezone = get_user_timezone(user)
+    local_datetime = create_local_present_datetime(user_timezone)
+    naive_datetime = DateTime.to_naive(local_datetime)
+
+    Repo.transaction(fn ->
+    update_subscription(current_subscription, %{"left_at" => naive_datetime, "left_timezone" => user_timezone})
+    create_subscription(user, plan)
+    end)
+
+  end
+
+  def list_user_subscriptions(%User{} = user) do
+    query = from s in Subscription,
+    where: s.user_id == ^user.id,
+    select: s
+    Repo.all(query)
+  end
+
   # User -> Subscription || nil
   # Receives a user and outputs the user's last subscription or nil if it doesn't have any
   def current_user_subscription(%User{} = user) do
