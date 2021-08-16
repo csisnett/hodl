@@ -6,7 +6,7 @@ defmodule Hodl.Accounts do
   import Ecto.Query, warn: false
   alias Hodl.Repo
 
-  alias Hodl.Accounts.Setting
+  alias Hodl.Accounts.{Setting, Plan, Subscription}
   alias Hodl.Users.User
 
   @user_editable_settings ["timezone"]
@@ -19,6 +19,9 @@ defmodule Hodl.Accounts do
         {:ok, user} = Repo.insert(changeset) # {:ok, User{}}
         %{"user_id" => user.id, "setting_key" => "timezone", "value" => user_params["timezone"]}
         |> create_setting()
+
+        free_plan = Repo.get_by(Plan, id: 1)
+        create_subscription(user, free_plan)
 
         {:ok, user}
       false -> {:error, changeset}
@@ -128,7 +131,12 @@ defmodule Hodl.Accounts do
     setting.value
   end
 
-  alias Hodl.Accounts.Plan
+    # String -> %DateTime{}
+  # Creates a DateTime for the present in the timezone given.
+  def create_local_present_datetime(timezone) do
+    {:ok, local_present_datetime} = DateTime.now(timezone, Tzdata.TimeZoneDatabase)
+    local_present_datetime
+  end
 
   @doc """
   Returns the list of plans.
@@ -175,6 +183,14 @@ defmodule Hodl.Accounts do
     %Plan{}
     |> Plan.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_free_plan() do
+    {:ok, free_plan} = create_plan(%{"name" => "free", "email_limit" => 5, "sms_limit" => 0})
+  end
+
+  def create_platinum_plan() do
+    {:ok, platinum_plan} = create_plan(%{"name" => "platinum", "email_limit" => 1_000_000, "sms_limit" => 100})
   end
 
   def create_plans() do
@@ -229,8 +245,6 @@ defmodule Hodl.Accounts do
     Plan.changeset(plan, attrs)
   end
 
-  alias Hodl.Accounts.Subscription
-
   @doc """
   Returns the list of subscriptions.
 
@@ -278,10 +292,22 @@ defmodule Hodl.Accounts do
     |> Repo.insert()
   end
 
+
+  # %User{}, %Plan{} -> {:ok, %Subscription{}} || {:error, %Changeset{}}
+  # Creates a Subscription for the user given to the plan given
+  def create_subscription(%User{} = user, %Plan{} = plan) do
+    user_timezone = get_user_timezone(user)
+    local_datetime = create_local_present_datetime(user_timezone)
+    naive_datetime = DateTime.to_naive(local_datetime)
+
+    %{"user_id" => user.id, "plan_id" => plan.id, "joined_at" => naive_datetime, "joined_timezone" => user_timezone}
+    |> create_subscription()
+  end
+
   # User -> Subscription || nil
   # Receives a user and outputs the user's last subscription or nil if it doesn't have any
   def current_user_subscription(%User{} = user) do
-    last_subscription_query = 
+    last_subscription_query =
     from s in Subscription,
     where: s.user_id == ^user.id and is_nil(s.left_at),
     select: s
