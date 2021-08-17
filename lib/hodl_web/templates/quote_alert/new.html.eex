@@ -1,23 +1,38 @@
 
 <%= csrf_meta_tag() %>
 <div id="app_basic" class="container">
+
+
 <b-form @submit="onSubmit">
 <h1>New Price alert</h1>
 Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> Current price: {{show_price}} USD  <br> <br>
-<div style="white-space: nowrap"> <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4>
- <b-form-select v-model="comparator" :options="comparator_options"></b-form-select>
-<input type="text" style="width: 150px;" v-model="user_alert_price"> USD
+<div style="white-space: nowrap">
+    <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4>
+    <b-form-select v-model="comparator" :options="comparator_options"></b-form-select>
+    <input type="text" style="width: 150px;" v-model="user_alert_price"> USD
 </div>
+
 <input type="submit" value="Create alert">
 </b-form>
-<b-modal ref="my-modal" aria-label="Your alert was created successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+
+
+    <b-modal ref="my-modal" aria-label="Your alert was created successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
       <div class="d-block text-center">
         <h5>Your alert was created successfully</h5>
       </div>
       </b-modal>
 
-</div>
+        <b-modal ref="fail-modal" aria-label="The alert can't be created as you're already using all in your plan!" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+      <div class="d-block text-center">
+        <br>
+        <h5>The alert can't be created as you're already using all available in your plan!</h5>
+        <h5> Delete an alert to create a new one or upgrade to Platinum. </h5>
+      </div>
+      </b-modal>
 
+
+<%= output_alerts(@quotealerts) %>
+</div>
 
 <span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>
 
@@ -51,6 +66,9 @@ var app = new Vue({
         showModal() {
         this.$refs['my-modal'].show()
       },
+       show_fail_modal(){
+        this.$refs['fail-modal'].show()
+       },
       hideModal() {
         this.$refs['my-modal'].hide()
       },
@@ -71,7 +89,7 @@ var app = new Vue({
               this.user_alert_price = ''
               }
             }
-            
+
         }
 
     }
@@ -98,12 +116,17 @@ var app = new Vue({
       if (xhr.status == "201") {
         console.log("quote alert created!")
         app.showModal()
-      } else {
+      }
+      if(xhr.status == "409"){
+        console.log("quote alert wasn't created because the user don't have any left")
+        app.show_fail_modal()
+      }
+       else {
         console.log("quote alert wasn't created!");
       }
       }
       xhr.send(json);
-      
+
   }
 
 function get_top_coins(){

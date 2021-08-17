@@ -7,6 +7,7 @@ defmodule Hodl.Accounts do
   alias Hodl.Repo
 
   alias Hodl.Accounts.{Setting, Plan, Subscription}
+  alias Hodl.Portfolio
   alias Hodl.Users.User
 
   @user_editable_settings ["timezone"]
@@ -27,6 +28,28 @@ defmodule Hodl.Accounts do
         user
         end)
       false -> {:error, changeset}
+    end
+  end
+
+  # %User{} -> %Plan{}
+  # Outputs the user's current plan
+  def get_current_plan(%User{} = user) do
+    query1 = from s in Subscription, where: s.user_id == ^user.id and is_nil(s.left_at), preload: [:plan]
+    subscription = Repo.one(query1)
+    subscription.plan
+  end
+
+  # %User{} -> Integer || String
+  # Given the user it outputs how many email alerts the user can create according to his plan
+  def email_alerts_remaining(%User{} = user) do
+    plan = get_current_plan(user)
+    active_alerts = Portfolio.list_user_active_quote_alerts(user) |> Enum.count()
+    remaining = plan.email_limit - active_alerts
+
+    cond do
+      remaining > 0 -> remaining
+      remaining == 0 -> remaining
+      remaining < 0 -> "less than 0" # a user shouldn't have more alerts than available in their plan( maybe it happens if they downgrade plans)
     end
   end
 

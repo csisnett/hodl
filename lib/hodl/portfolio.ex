@@ -6,6 +6,7 @@ defmodule Hodl.Portfolio do
   import Ecto.Query, warn: false
   alias Hodl.Repo
   alias Hodl.Portfolio
+  alias Hodl.Accounts
   alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking}
   alias Hodl.Users.User
 
@@ -146,7 +147,7 @@ defmodule Hodl.Portfolio do
   def get_hodlschedule!(id), do: Repo.get!(Hodlschedule, id)
 
   def get_hodlschedule_cycles(%Hodlschedule{} = schedule) do
-    query = from c in Cycle, 
+    query = from c in Cycle,
     where: c.hodlschedule_id == ^schedule.id,
     order_by: [desc: c.id],
     select: c
@@ -198,7 +199,7 @@ defmodule Hodl.Portfolio do
   #[%{"price_per_coin", "amount_per_coin", "sale_percentage" }], Hodlschedule, [] -> [%Cycle{}, ...]
   # Receives a list of cycle attrs and creates the respective cycles
   # About
-  #The cycles are received from last to first order. 
+  #The cycles are received from last to first order.
   #They're created in that order as well in order to have the next_cycle_id
   def create_cycles!(cycles, %Hodlschedule{} = hodlschedule, result) do
     [current_attrs | rest] = cycles
@@ -212,11 +213,11 @@ defmodule Hodl.Portfolio do
     result = result ++ [current_cycle]
     case length(rest) do
       0 -> result |> Enum.reverse()
-      n -> 
+      n ->
         [parent_attrs | others] = rest
         parent_attrs = parent_attrs |> Map.put("next_cycle_id", current_cycle.id)
         create_cycles!( [parent_attrs | others], hodlschedule, result)
-    end 
+    end
   end
 
   def create_cycle!(%{} = attrs, %Hodlschedule{} = hodlschedule) do
@@ -392,7 +393,7 @@ defmodule Hodl.Portfolio do
     {:ok, response_body} = Jason.decode(response.body)
   end
 
-  # Returns all the cryptos in coin market cap and prepares them for insertion into the db
+  # Gets all the coins in coin market cap and prepares them for insertion into the db
   def get_crypto_ids do
     api_key = System.get_env("MARKETCAP_KEY")
     {:ok, response} = HTTPoison.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/map", [{"Content-Type", "application/json"}, {"Accept", "application/json"}, {"Accept-Encoding", "application/json"}, {"charset", "utf-8"}, {"X-CMC_PRO_API_KEY", api_key}])
@@ -420,6 +421,14 @@ defmodule Hodl.Portfolio do
     create_coins(tokens)
   end
 
+  def initial_setup() do
+    all_coins = get_crypto_ids()
+    create_platform_coins(all_coins)
+    create_token_coins(all_coins)
+    create_ranking(%{"name" => "Coin Market Cap"})
+
+  end
+
     # Base case of the following function
   def create_coins([]) do
     []
@@ -431,7 +440,7 @@ defmodule Hodl.Portfolio do
     [first | rest] = coin_list
     coin = Repo.get_by(Coin, coinmarketcap_id: first["id"])
     case coin do
-      nil -> 
+      nil ->
         {:ok, coin} = create_coin(first)
         create_coins(rest)
 
@@ -677,7 +686,7 @@ defmodule Hodl.Portfolio do
   def get_or_create_coin(%{} = params) do
     coin = Repo.get_by(Coin, coinmarketcap_id: params["id"])
     case coin do
-      nil -> 
+      nil ->
         {:ok, coin} = prepare_coin_for_creation(params) |> create_coin()
         coin |> Map.put("cmc_rank", params["cmc_rank"])
       coin ->
@@ -689,7 +698,7 @@ defmodule Hodl.Portfolio do
     from(c in Coinrank, where: c.ranking_id == ^id) |> Repo.delete_all
   end
 
-  # Prepares attrs for the Coinrank CMC rank 
+  # Prepares attrs for the Coinrank CMC rank
   def prepare_for_coinrank_creation(%Coin{} = coin, %Ranking{} = ranking) do
     %{"position" => coin["cmc_rank"], "coin_id" => coin.id, "ranking_id" => ranking.id}
   end
@@ -697,6 +706,12 @@ defmodule Hodl.Portfolio do
   def insert_all_coinranks(%Ranking{} = ranking, coins_params) when is_list(coins_params) do
     coins = Enum.map(coins_params, fn coin_params -> get_or_create_coin(coin_params) end)
     Enum.each(coins, fn coin -> prepare_for_coinrank_creation(coin, ranking) |> create_coinrank() end)
+  end
+
+  def initiate_cmc_rank() do
+    ranking = Repo.get_by(Ranking, id: 1)
+    cmc_quotes = get_top_quotes() |> Enum.slice(0, 100)
+    insert_all_coinranks(ranking, cmc_quotes)
   end
 
   # %Ranking{} -> [%Coinrank{}, ...]
@@ -951,7 +966,7 @@ defmodule Hodl.Portfolio do
     quote_alerts = list_user_quotealerts(user)
     |> Enum.map(fn quote_alert ->
        quote_alert
-       |> Map.put(:coin_name, quote_alert.coin.name) 
+       |> Map.put(:coin_name, quote_alert.coin.name)
        |> Map.put(:coin_symbol, quote_alert.coin.symbol)
        |> Map.put(:coin_uuid, quote_alert.coin.uuid) end)
   end
@@ -1007,11 +1022,18 @@ defmodule Hodl.Portfolio do
   end
 
   def create_quote_alert(%{} = attrs, %User{id: id} = user) do
-    coin = get_coin_by_uuid(attrs["coin_uuid"])
-    attrs 
-    |> Map.put("coin_id", coin.id)
-    |> Map.put("user_id", id)
-    |> create_quote_alert()
+    remaining = Accounts.email_alerts_remaining(user)
+
+    if remaining > 0 do
+      coin = get_coin_by_uuid(attrs["coin_uuid"])
+      attrs
+      |> Map.put("coin_id", coin.id)
+      |> Map.put("user_id", id)
+      |> create_quote_alert()
+
+    else
+        {:error, "No email alerts left"}
+    end
   end
 
   @doc """
@@ -1095,6 +1117,15 @@ defmodule Hodl.Portfolio do
   def list_active_quote_alerts() do
     query = from q in QuoteAlert,
     where: q.active? == true and is_nil(q.trigger_quote_id) and q.deleted? == false,
+    select: q
+    Repo.all(query)
+  end
+
+  # Gets the active quote alerts for a specific user
+  # It must an alert that the user has as active + it hasn't been triggered + the user hasn't deleted
+  def list_user_active_quote_alerts(%User{} = user) do
+    query = from q in QuoteAlert,
+    where: q.active? == true and is_nil(q.trigger_quote_id) and q.deleted? == false and q.user_id == ^user.id,
     select: q
     Repo.all(query)
   end

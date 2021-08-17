@@ -4,7 +4,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
   alias Hodl.Users.User
   alias Hodl.Portfolio.{Coin, Quote}
 
-   
+
   @derive {Jason.Encoder, only: [:active?, :comparator, :email, :uuid, :price_usd, :coin_name, :coin_symbol]}
   schema "quotealerts" do
     field :uuid, Ecto.ShortUUID, autogenerate: true
@@ -24,6 +24,8 @@ defmodule Hodl.Portfolio.QuoteAlert do
 
   def adjust_comparator(changeset) do
     case get_field(changeset, :comparator) do
+      "above" -> changeset
+      "below" -> changeset
       "equal or greater than" -> put_change(changeset, :comparator, "above")
       "lower than" -> put_change(changeset, :comparator, "below")
       anything_else -> add_error(changeset, :comparator, "comparator field is neither 'equal or greater...' or 'lower than'")

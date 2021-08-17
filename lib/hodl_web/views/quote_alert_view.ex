@@ -89,6 +89,10 @@ defmodule HodlWeb.QuoteAlertView do
     quotealerts = Hodl.Portfolio.list_user_quotealerts_out(user)
   end
 
+  def output_alerts([]) do
+    raw(" <br> <br> <h2> My alerts </h2> <br> <h4> You have no active alerts to show </h4>")
+  end
+
   # [QuoteAlerts] -> HTML
   # Output the quote alerts categorized by coin
   def output_alerts(quote_alerts) do
