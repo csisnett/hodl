@@ -16,6 +16,7 @@ defmodule Hodl.Accounts do
     changeset = User.changeset(%User{}, user_params)
     case changeset.valid?  do
       true ->
+        Repo.transaction(fn ->
         {:ok, user} = Repo.insert(changeset) # {:ok, User{}}
         %{"user_id" => user.id, "setting_key" => "timezone", "value" => user_params["timezone"]}
         |> create_setting()
@@ -23,7 +24,8 @@ defmodule Hodl.Accounts do
         free_plan = Repo.get_by(Plan, id: 1)
         create_subscription(user, free_plan)
 
-        {:ok, user}
+        user
+        end)
       false -> {:error, changeset}
     end
   end
