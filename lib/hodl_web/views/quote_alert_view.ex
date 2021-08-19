@@ -43,7 +43,7 @@ defmodule HodlWeb.QuoteAlertView do
     coin_symbol="#{coin_symbol_raw}"
     comparator="#{quote_alert.comparator}"
     uuid="#{quote_alert.uuid}"
-    price_usd="#{quote_alert.price_usd}"
+    price_usd="#{quote_alert.price}"
     coin_uuid="#{quote_alert.coin.uuid}">
 
     </alert>
@@ -111,7 +111,7 @@ defmodule HodlWeb.QuoteAlertView do
 
   def render("quote_alert.json", %{quote_alert: quote_alert}) do
     %{uuid: quote_alert.uuid,
-      price_usd: quote_alert.price_usd,
+      price_usd: quote_alert.price,
       uuid: quote_alert.uuid,
       coin_name: quote_alert.coin_name,
       coin_symbol: quote_alert.coin_symbol,

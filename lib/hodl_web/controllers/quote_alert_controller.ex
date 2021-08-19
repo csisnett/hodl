@@ -2,7 +2,8 @@ defmodule HodlWeb.QuoteAlertController do
   use HodlWeb, :controller
 
   alias Hodl.Portfolio
-  alias Hodl.Portfolio.QuoteAlert
+  alias Hodl.Repo
+  alias Hodl.Portfolio.{Coin, QuoteAlert}
   require Logger
 
   def index(conn, _params) do
@@ -27,6 +28,7 @@ defmodule HodlWeb.QuoteAlertController do
 
   def create(conn, %{"quote_alert" => quote_alert_params}) do
     user = conn.assigns.current_user
+    quote_alert_params = quote_alert_params |> prepare_for_creation()
     with {:ok, %QuoteAlert{} = quote_alert} <- Portfolio.create_quote_alert(quote_alert_params, user) do
       conn
       |> put_status(:created)
@@ -37,6 +39,18 @@ defmodule HodlWeb.QuoteAlertController do
         conn = Plug.Conn.put_status(conn, 409)
         json(conn, %{"error" => "No email alerts left"})
     end
+  end
+
+  # If the price is in USD then uses the USD coin and puts the data in the right format
+  def prepare_for_creation(%{"price_usd" => _} = params) do
+    us_coin = Repo.get_by(Coin, name: "US Dollar")
+    params
+    |> Map.put("base_coin_id", us_coin.id)
+    |> Map.put("price", params["price_usd"])
+  end
+
+  def prepare_for_creation(%{"price" => _} = params) do
+    params
   end
 
   def show(conn, %{"uuid" => uuid}) do

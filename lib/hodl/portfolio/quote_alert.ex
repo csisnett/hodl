@@ -4,21 +4,26 @@ defmodule Hodl.Portfolio.QuoteAlert do
   alias Hodl.Users.User
   alias Hodl.Portfolio.{Coin, Quote}
 
+  @attrs_to_cast [:price, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?, :base_coin_id, :percentage_target, :base_price]
 
-  @derive {Jason.Encoder, only: [:active?, :comparator, :email, :uuid, :price_usd, :coin_name, :coin_symbol]}
+  @derive {Jason.Encoder, only: [:active?, :comparator, :email, :uuid, :price, :coin_name, :coin_symbol]}
   schema "quotealerts" do
     field :uuid, Ecto.ShortUUID, autogenerate: true
-    field :price_usd, :decimal
+    belongs_to :coin, Coin
+    field :coin_name, :string, virtual: true
+    field :coin_symbol, :string, virtual: true
+    field :price, :decimal
     field :email, :string
     field :active?, :boolean, default: true
     field :deleted?, :boolean, default: false
     field :comparator, :string # "above" or "below"
     field :email_sent_datetime, :utc_datetime
     belongs_to :trigger_quote, Quote
-    field :coin_name, :string, virtual: true
-    field :coin_symbol, :string, virtual: true
+    field :percentage_target, :decimal
+    field :base_price, :decimal # For percentage comparisons
+    belongs_to :base_coin, Coin
     belongs_to :user, User
-    belongs_to :coin, Coin
+
     timestamps()
   end
 
@@ -43,8 +48,8 @@ defmodule Hodl.Portfolio.QuoteAlert do
   @doc false
   def changeset(quote_alert, attrs) do
     quote_alert
-    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
-    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id, :deleted?])
+    |> cast(attrs, @attrs_to_cast)
+    |> validate_required([:price, :active?, :comparator, :user_id, :coin_id, :deleted?, :base_coin_id])
     |> adjust_comparator()
     |> validate_comparator()
     |> foreign_key_constraint(:user_id)
@@ -53,8 +58,8 @@ defmodule Hodl.Portfolio.QuoteAlert do
 
   def delete_changeset(quote_alert, attrs) do
     quote_alert
-    |> cast(attrs, [:price_usd, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
-    |> validate_required([:price_usd, :active?, :comparator, :user_id, :coin_id, :deleted?])
+    |> cast(attrs, [:price, :active?, :comparator, :user_id, :coin_id, :email, :trigger_quote_id, :deleted?])
+    |> validate_required([:price, :active?, :comparator, :user_id, :coin_id, :deleted?])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:coin_id)
     |> foreign_key_constraint(:trigger_quote_id)
