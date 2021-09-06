@@ -4,12 +4,28 @@
 
 
 <b-form @submit="onSubmit">
+<b-button size="lg" v-on:click="change_alert_type('price_alert')" squared v-bind:variant="price_button_variant">$</b-button>
+<b-button  size="lg" v-on:click="change_alert_type('percentage_alert')" squared v-bind:variant="percentage_button_variant">%</b-button>
 <h1>New Price alert</h1>
+
+
+
 Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> Current price: {{show_price}} USD  <br> <br>
-<div style="white-space: nowrap">
-    <h4 style="display: inline-block">I want to be notified when {{options[selected].name}} is </h4>
-    <b-form-select v-model="comparator" :options="comparator_options"></b-form-select>
-    <input type="text" style="width: 150px;" v-model="user_alert_price"> USD
+
+<div v-if="render_price"style="white-space: nowrap">
+    <h4 style="display: inline-block"> Alert when {{options[selected].name}} is above:</h4>
+    <input type="text" style="width: 150px;" v-model="user_above_price"> USD
+<br>
+        <h4 style="display: inline-block"> Alert when {{options[selected].name}} is below: </h4>
+    <input type="text" style="width: 150px;" v-model="user_below_price"> USD
+</div>
+
+<div style="white-space: nowrap" v-else>
+    <h4 style="display: inline-block"> Alert when price increases by:</h4>
+    <input type="text" style="width: 150px;" v-model="user_above_percentage"> % from now
+<br>
+        <h4 style="display: inline-block"> Alert when price decreases by: </h4>
+    <input type="text" style="width: 150px;" v-model="user_below_percentage"> % from now
 </div>
 
 <input type="submit" value="Create alert">
@@ -46,11 +62,20 @@ var app = new Vue({
             hello: "world",
             options: [],
             user_alert_price: null,
-            comparator_options: ["equal or greater than", "lower than"],
-            comparator: "equal or greater than",
+            user_above_price: null,
+            user_below_price: null,
+            user_above_percentage: null,
+            user_below_percentage: null,
+            alert_type: "price_alert",
             csrf_token: null,
             loading: true,
-            show_price: ''
+            show_price: '',
+            alert_types: [
+              { text: '$', value: 'price_alert' },
+              { text: '%', value: 'percentage_alert' }
+            ],
+            percentage_button_variant: 'outline-primary',
+            price_button_variant: 'primary'
         }
     },
     created: function (){
@@ -72,6 +97,27 @@ var app = new Vue({
       hideModal() {
         this.$refs['my-modal'].hide()
       },
+
+      change_alert_type(alert_type){
+        if(alert_type == "price_alert"){
+          this.alert_type = "price_alert"
+          this.price_button_variant = "primary"
+          this.percentage_button_variant = "outline-primary"
+        } else {
+          this.alert_type = "percentage_alert"
+          this.price_button_variant = "outline-primary"
+          this.percentage_button_variant = "primary"
+        }
+      }
+    },
+    computed: {
+      render_price: function(){
+        if(this.alert_type == "price_alert"){
+          return true;
+        } else{
+          return false;
+        }
+      }
     },
     watch: {
         selected: function(){
@@ -95,6 +141,25 @@ var app = new Vue({
     }
 })
 
+  function prepare_for_sending(params) {
+     /* Use either price or percentage for the alert */
+    if(app.alert_type == "price_alert"){
+      params.above_price = app.user_above_price;
+    }
+    if(app.alert_type == "price_alert"){
+      params.below_price = app.user_below_price;
+    }
+    if(app.alert_type == "percentage_alert"){
+      params.above_percentage = app.user_above_percentage;
+      params.below_percentage = app.user_below_percentage;
+      let price = parseFloat(app.options[app.selected]["price_usd"])
+      params.base_price = price;
+    }
+
+    return params;
+
+  }
+
   function create_quote_alert() {
     let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -102,8 +167,8 @@ var app = new Vue({
     let url = base_url
     let data = {}
     data._csrf_token = csrf_token;
-    let quote_alert = {comparator: app.comparator, price_usd: app.user_alert_price, coin_uuid: app.options[app.selected]["uuid"]};
-    data.quote_alert = quote_alert;
+    let quote_alert = {coin_uuid: app.options[app.selected]["uuid"], base_coin_name: "US Dollar"};
+    data.quote_alert = prepare_for_sending(quote_alert);
 
     let json = JSON.stringify(data);
 
@@ -117,7 +182,7 @@ var app = new Vue({
         console.log("quote alert created!")
         app.showModal()
       }
-      if(xhr.status == "409"){
+      else if(xhr.status == "409"){
         console.log("quote alert wasn't created because the user don't have any left")
         app.show_fail_modal()
       }
