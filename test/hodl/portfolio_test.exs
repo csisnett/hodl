@@ -417,4 +417,63 @@ defmodule Hodl.PortfolioTest do
       assert %Ecto.Changeset{} = Portfolio.change_quote_alert(quote_alert)
     end
   end
+
+  describe "alerttriggers" do
+    alias Hodl.Portfolio.AlertTrigger
+
+    @valid_attrs %{type: "some type"}
+    @update_attrs %{type: "some updated type"}
+    @invalid_attrs %{type: nil}
+
+    def alert_trigger_fixture(attrs \\ %{}) do
+      {:ok, alert_trigger} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Portfolio.create_alert_trigger()
+
+      alert_trigger
+    end
+
+    test "list_alerttriggers/0 returns all alerttriggers" do
+      alert_trigger = alert_trigger_fixture()
+      assert Portfolio.list_alerttriggers() == [alert_trigger]
+    end
+
+    test "get_alert_trigger!/1 returns the alert_trigger with given id" do
+      alert_trigger = alert_trigger_fixture()
+      assert Portfolio.get_alert_trigger!(alert_trigger.id) == alert_trigger
+    end
+
+    test "create_alert_trigger/1 with valid data creates a alert_trigger" do
+      assert {:ok, %AlertTrigger{} = alert_trigger} = Portfolio.create_alert_trigger(@valid_attrs)
+      assert alert_trigger.type == "some type"
+    end
+
+    test "create_alert_trigger/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Portfolio.create_alert_trigger(@invalid_attrs)
+    end
+
+    test "update_alert_trigger/2 with valid data updates the alert_trigger" do
+      alert_trigger = alert_trigger_fixture()
+      assert {:ok, %AlertTrigger{} = alert_trigger} = Portfolio.update_alert_trigger(alert_trigger, @update_attrs)
+      assert alert_trigger.type == "some updated type"
+    end
+
+    test "update_alert_trigger/2 with invalid data returns error changeset" do
+      alert_trigger = alert_trigger_fixture()
+      assert {:error, %Ecto.Changeset{}} = Portfolio.update_alert_trigger(alert_trigger, @invalid_attrs)
+      assert alert_trigger == Portfolio.get_alert_trigger!(alert_trigger.id)
+    end
+
+    test "delete_alert_trigger/1 deletes the alert_trigger" do
+      alert_trigger = alert_trigger_fixture()
+      assert {:ok, %AlertTrigger{}} = Portfolio.delete_alert_trigger(alert_trigger)
+      assert_raise Ecto.NoResultsError, fn -> Portfolio.get_alert_trigger!(alert_trigger.id) end
+    end
+
+    test "change_alert_trigger/1 returns a alert_trigger changeset" do
+      alert_trigger = alert_trigger_fixture()
+      assert %Ecto.Changeset{} = Portfolio.change_alert_trigger(alert_trigger)
+    end
+  end
 end
