@@ -42,11 +42,12 @@ defmodule HodlWeb.QuoteAlertController do
   end
 
   # If the price is in USD then uses the USD coin and puts the data in the right format
-  def prepare_for_creation(%{"price_usd" => _} = params) do
-    us_coin = Repo.get_by(Coin, name: "US Dollar")
+  # ONCE I've created the USD coin on the server and such I can use the UUIDs instead of the base coin name
+  def prepare_for_creation(%{"base_coin_name" => name} = params) do
+    us_coin = Repo.get_by(Coin, name: name)
+
     params
     |> Map.put("base_coin_id", us_coin.id)
-    |> Map.put("price", params["price_usd"])
   end
 
   def prepare_for_creation(%{"price" => _} = params) do

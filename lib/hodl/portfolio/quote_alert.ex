@@ -5,7 +5,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
   alias Hodl.Portfolio.{Coin, Quote}
 
   @attrs_to_cast [:coin_id, :above_price, :below_price, :email, :phone_number,
-  :finished?, :deleted?, :email_sent_datetime, :sms_sent_datetime, :above_percentage,
+  :finished?, :deleted?, :above_percentage,
   :below_percentage, :base_price, :base_coin_id, :user_id]
 
   @attrs_to_send [:finished?, :email, :uuid, :above_price, :below_price,
@@ -19,15 +19,17 @@ defmodule Hodl.Portfolio.QuoteAlert do
     field :coin_symbol, :string, virtual: true
     field :above_price, :decimal
     field :below_price, :decimal
+    field :above_price_trigger_quote_id, :integer, virtual: true
+    field :below_price_trigger_quote_id, :integer, virtual: true
     field :email, :string
     field :phone_number, :string
     field :deleted?, :boolean, default: false
     field :finished?, :boolean, default: false
     field :user_editable?, :boolean, virtual: true
-    field :email_sent_datetime, :utc_datetime
-    field :sms_sent_datetime, :utc_datetime
     field :above_percentage, :decimal
     field :below_percentage, :decimal
+    field :above_percentage_trigger_quote_id, :integer, virtual: true
+    field :below_percentage_trigger_quote_id, :integer, virtual: true
     field :base_price, :decimal # For percentage comparisons
     belongs_to :base_coin, Coin
     belongs_to :user, User
