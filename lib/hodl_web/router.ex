@@ -44,6 +44,7 @@ defmodule HodlWeb.Router do
     get "/privacy", PageController, :privacy
     get "/new-account", UserController, :new_account
     post "/create-account", UserController, :create_account
+    delete "delete-session", UserController, :sign_out
 
 
     resources "/alerts", QuoteAlertController, except: [:show, :edit, :update, :delete, :new, :create]
@@ -72,7 +73,7 @@ defmodule HodlWeb.Router do
     get "/top-coins", CoinController, :top_coins
     post "/quotes", QuoteController, :these_quotes
     post "/create-hodl", HodlscheduleController, :create
-    
+
     get "/all-hodl", HodlscheduleController, :index
     get "/username-suggestion", PageController, :random_username
   end
