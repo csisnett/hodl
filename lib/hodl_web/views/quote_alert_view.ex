@@ -120,7 +120,7 @@ defmodule HodlWeb.QuoteAlertView do
       uuid: quote_alert.uuid,
       coin_name: quote_alert.coin_name,
       coin_symbol: quote_alert.coin_symbol,
-      finished: quote_alert.finished?}
+      active: quote_alert.active}
   end
 
 end

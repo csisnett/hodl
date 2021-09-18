@@ -7,7 +7,7 @@ defmodule Hodl.Portfolio do
   alias Hodl.Repo
   alias Hodl.Portfolio
   alias Hodl.Accounts
-  alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking}
+  alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking, QuoteAlert, AlertTrigger}
   alias Hodl.Users.User
 
   def get_user!(id), do: Repo.get!(User, id)
@@ -465,7 +465,34 @@ defmodule Hodl.Portfolio do
     incoming_quotes = get_top_quotes() |> create_new_quotes()
     active_quote_alerts = list_active_quote_alerts()
     alerts_to_trigger = detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
-    Enum.map(alerts_to_trigger, fn quote_alert -> insert_job_for_quote_email(quote_alert) end)
+    |> trigger_these_alerts()
+  end
+
+  def initiate_2(incoming_quotes) do
+    active_quote_alerts = list_active_quote_alerts()
+    alerts_to_trigger = detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
+    |> trigger_these_alerts()
+  end
+
+  def trigger_these_alerts([]) do
+    IO.puts("no alerts to trigger")
+  end
+
+  # [%QuoteAlert{}, ...] ->
+    # Triggers each alert it receives: it creates the alert trigger record and sends email and/or sms.
+  def trigger_these_alerts(quote_alerts) do
+    Enum.map(quote_alerts, fn quote_alert -> trigger_alert(quote_alert) end)
+  end
+
+  def trigger_alert(%QuoteAlert{alert_trigger_attrs: alert_trigger_attrs} = quote_alert) do
+    {:ok, alert_trigger} = create_alert_trigger(alert_trigger_attrs)
+    insert_job_for_alert_trigger(alert_trigger)
+  end
+
+  def insert_job_for_alert_trigger(%AlertTrigger{} = alert_trigger) do
+    %{id: alert_trigger.id}
+    |> Hodl.Portfolio.TriggerEmailWorker.new()
+    |> Oban.insert()
   end
 
   def insert_job_for_quote_email(quote_alert) do
@@ -757,6 +784,17 @@ defmodule Hodl.Portfolio do
     Repo.one(query)
   end
 
+  # Coin Id (Integer) -> Decimal
+  # Gets the coin last quote' price in USD
+  def last_quote_price(id) do
+    query = from q in Quote,
+    where: q.coin_id == ^id,
+    order_by: [desc: q.inserted_at],
+    limit: 1,
+    select: q.price_usd
+    Repo.one(query)
+  end
+
   # %Coin{} -> %Coin{price_usd: _}
   # Puts the last quote price for that coin in the struct
   def put_last_quote_price(%Coin{} = coin) do
@@ -904,8 +942,6 @@ defmodule Hodl.Portfolio do
     Coinrank.changeset(coinrank, attrs)
   end
 
-  alias Hodl.Portfolio.QuoteAlert
-
   @doc """
   Returns the list of quotealerts.
 
@@ -945,8 +981,8 @@ defmodule Hodl.Portfolio do
     result
   end
 
-  # [QuoteAlert, ..], [] -> [%Coin{}]
-  # Returns each coin once used in the quote_alerts given
+  # [QuoteAlert, ..], [] -> [%Coin{}, ...]
+  # Returns each coin exactly once in the quote_alerts given
   def make_coin_list(quote_alerts, result_coins) do
     [first | rest] = quote_alerts
     coin = first.coin
@@ -995,11 +1031,12 @@ defmodule Hodl.Portfolio do
 
   # Outputs the subject email that will be sent when the quote alert is triggered
   # %QuoteAlert{} -> String
+  # MODIFY THIS TO SHOW BASE COIN SYMBOL AND NOT JUST US$
   def quote_alert_subject(%QuoteAlert{} = quote_alert) do
     case quote_alert.comparator do
-      "above" -> "#{quote_alert.coin.name} was equal or higher than #{quote_alert.price_usd} US$"
+      "above" -> "#{quote_alert.coin.name} was equal or higher than #{quote_alert.price} US$"
 
-      "below" -> "#{quote_alert.coin.name} was lower than #{quote_alert.price_usd} US$"
+      "below" -> "#{quote_alert.coin.name} was lower than #{quote_alert.price} US$"
     end
   end
 
@@ -1017,7 +1054,7 @@ defmodule Hodl.Portfolio do
   """
   def create_quote_alert(attrs \\ %{}) do
     %QuoteAlert{}
-    |> QuoteAlert.changeset(attrs)
+    |> QuoteAlert.create_changeset(attrs)
     |> Repo.insert()
   end
 
@@ -1064,6 +1101,13 @@ defmodule Hodl.Portfolio do
     end
   end
 
+  def update_quote_alert_active(%QuoteAlert{} = quote_alert, type) do
+    new_active = String.replace(quote_alert.active, type, "") |> String.replace(",", "")
+
+    new_active = if new_active == "" do "false" else new_active end
+    update_quote_alert(quote_alert, %{"active" => new_active})
+  end
+
   @doc """
   Deletes a quote_alert.
 
@@ -1080,7 +1124,7 @@ defmodule Hodl.Portfolio do
   # Soft deletes the quote alert
   def soft_delete_quote_alert(%QuoteAlert{} = quote_alert, %User{} = user) do
     with :ok <- Bodyguard.permit(Portfolio.Policy, :soft_delete_quote_alert, user, quote_alert) do
-      QuoteAlert.delete_changeset(quote_alert, %{"deleted?" => true}) |> Repo.update()
+      QuoteAlert.changeset(quote_alert, %{"deleted?" => true}) |> Repo.update()
     end
   end
 
@@ -1114,10 +1158,12 @@ defmodule Hodl.Portfolio do
 
   # Gets the active quote alerts to be used every time we check quote prices changes
   # It must an alert that the user has as active + it hasn't been triggered + the user hasn't deleted
+  # Is used in initiate_quote_retrieval()
   def list_active_quote_alerts() do
     query = from q in QuoteAlert,
-    where: q.active? == true and is_nil(q.trigger_quote_id) and q.deleted? == false,
-    select: q
+    where: q.deleted? == false and q.active != "false",
+    select: q,
+    preload: [:base_coin]
     Repo.all(query)
   end
 
@@ -1125,34 +1171,191 @@ defmodule Hodl.Portfolio do
   # It must an alert that the user has as active + it hasn't been triggered + the user hasn't deleted
   def list_user_active_quote_alerts(%User{} = user) do
     query = from q in QuoteAlert,
-    where: q.active? == true and is_nil(q.trigger_quote_id) and q.deleted? == false and q.user_id == ^user.id,
+    where: q.deleted? == false and q.active != "false" and q.user_id == ^user.id,
     select: q
     Repo.all(query)
   end
 
+  # -> %Coin{name: "US Dollar"}
+  # Returns the US dollar Coin
+  def get_US_dollar() do
+    Repo.get_by(Coin, name: "US Dollar")
+  end
+
+  # QuoteAlert{} -> Boolean
+  # Outputs true if the base coin is the US dollar, false if it isn't.
+  def is_quote_alert_in_usd?(%QuoteAlert{} = quote_alert) do
+    us_coin = get_US_dollar()
+    us_coin.id == quote_alert.base_coin_id
+  end
+
+  def get_quote_price_in_coin(%Quote{price_usd: price}, %Coin{name: "US Dollar"}) do
+    price
+  end
+
+    # Gets the price of a specific coin using other coin as a base.
+  # Ex: If we want: BTC/ETH then -> (USD/BTC)^-1 x (USD/ETH)
+  # We use the current dollar prices of each coin in order to get the result we want: BTC/ETH
+  def get_quote_price_in_coin(%Quote{} = thisquote, %Coin{} = coin) do
+    price_of_original_coin = thisquote.price_usd
+    multiplying_factor = Decimal.div(1, price_of_original_coin)
+    price_of_base_coin = last_quote_price(coin.id)
+    Decimal.mult(multiplying_factor, price_of_base_coin)
+  end
+
+
+  # Gets the price of a specific coin using other coin as a base.
+  # Ex: If we want: BTC/ETH then -> (USD/BTC)^-1 x (USD/ETH)
+  # We use the current dollar prices of each coin in order to get the result we want: BTC/ETH
+  def get_coin_price_in_coin(targetcoin_id, basecoin_id) when is_integer(basecoin_id) do
+    price_of_original_coin = last_quote_price(targetcoin_id)
+    multiplying_factor = Decimal.div(1, price_of_original_coin)
+    price_of_base_coin = last_quote_price(basecoin_id)
+    Decimal.mult(multiplying_factor, price_of_base_coin)
+  end
+
+  def get_above_price(%QuoteAlert{above_price: nil, base_price: nil}) do
+    "not available"
+  end
+
+  def get_above_price(%QuoteAlert{above_price: above_price, base_price: nil}) do
+    above_price
+  end
+
+  def get_below_price(%QuoteAlert{below_price: nil, base_price: nil}) do
+    "not available"
+  end
+
+  def get_below_price(%QuoteAlert{below_price: below_price, base_price: nil}) do
+    below_price
+  end
+
+  def generate_alert_trigger_attrs(%QuoteAlert{} = quote_alert, %Quote{} = myquote, type) do
+    %{"quote_alert_id" => quote_alert.id,
+      "quote_id" => myquote.id,
+      "type" => type,
+      "phone_number" => quote_alert.phone_number,
+      "email_address" => quote_alert.email
+    }
+  end
+
+  # This function needs modification and rework now that we have percentage comparisons
   # Quote, QuoteAlert -> Boolean
   # Returns true if the quote alert should go off, false if it shouldn't
-  def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id} = quote_alert) do
-    case quote_alert.comparator do
-      "above" -> Decimal.compare(myquote.price_usd, quote_alert.price_usd) == :gt or Decimal.compare(myquote.price_usd, quote_alert.price_usd) == :eq
-      "below" -> Decimal.compare(myquote.price_usd,  quote_alert.price_usd) == :lt
+  def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id, base_price: nil} = quote_alert) do
+    #In case we need to convert the quote price from USD to the base coin
+    initial_quote_alert = quote_alert
+    quote_price = get_quote_price_in_coin(myquote, quote_alert.base_coin)
+    above_price = get_above_price(quote_alert)
+    below_price = get_below_price(quote_alert)
+
+    quote_alert = if compare_above(quote_price, above_price) do
+      alert_trigger = generate_alert_trigger_attrs(quote_alert, myquote, "above_price")
+      quote_alert |> Map.put(:"alert_trigger_attrs", alert_trigger)
+    else
+      quote_alert
+    end
+
+    quote_alert = if compare_below(quote_price, below_price) do
+      alert_trigger = generate_alert_trigger_attrs(quote_alert, myquote, "below_price")
+      quote_alert |> Map.put(:"alert_trigger_attrs", alert_trigger)
+    else
+      quote_alert
+    end
+
+    if initial_quote_alert == quote_alert do
+      {false, quote_alert}
+    else
+      {true, quote_alert}
+    end
+  end
+
+  def get_above_percentage_price(%QuoteAlert{base_price: _, above_percentage: nil}) do
+    "not available"
+  end
+
+  def get_above_percentage_price(%QuoteAlert{base_price: base_price, above_percentage: above_percentage} = quote_alert) do
+    above_factor = Decimal.div(above_percentage, 100) |> Decimal.add(1) # If 10% then -> 1.1
+    Decimal.mult(above_factor, base_price)# 1.1 x base_price
+  end
+
+  def get_below_percentage_price(%QuoteAlert{base_price: _, below_percentage: nil}) do
+    "not available"
+  end
+
+  def get_below_percentage_price(%QuoteAlert{base_price: base_price, below_percentage: below_percentage} = quote_alert) do
+      below_factor = Decimal.div(below_percentage, 100)
+      multiplying_factor = Decimal.sub(1, below_factor)
+      Decimal.mult(multiplying_factor, base_price)
+  end
+
+  def compare_above(quote_price, "not available") do
+    false
+  end
+
+  def compare_above(quote_price, above_price) do
+    Decimal.compare(quote_price, above_price) == :gt or Decimal.compare(quote_price, above_price) == :eq
+  end
+
+  def compare_below(quote_price, "not available") do
+    false
+  end
+
+  def compare_below(quote_price, below_price) do
+    Decimal.compare(quote_price,  below_price) == :lt
+  end
+
+  # Quote, QuoteAlert -> {true, QuoteAlert} || {false, QuoteAlert}
+  # If the quote price is lower than the % decrease or higher than % increase return true.
+  def should_quote_alert_go_off?(%Quote{coin_id: _id} = myquote, %QuoteAlert{coin_id: _id, base_price: base_price} = quote_alert) do
+    initial_quote_alert = quote_alert
+    quote_price = get_quote_price_in_coin(myquote, quote_alert.base_coin)
+    above_price = get_above_percentage_price(quote_alert)
+    below_price = get_below_percentage_price(quote_alert)
+
+    quote_alert = if compare_above(quote_price, above_price) do
+      alert_trigger = generate_alert_trigger_attrs(quote_alert, myquote, "above_percentage")
+      quote_alert |> Map.put(:"alert_trigger_attrs", alert_trigger)
+    else
+      quote_alert
+    end
+
+    quote_alert = if compare_below(quote_price, below_price) do
+      alert_trigger = generate_alert_trigger_attrs(quote_alert, myquote, "below_percentage")
+      quote_alert |> Map.put(:"alert_trigger_attrs", alert_trigger)
+    else
+      quote_alert
+    end
+
+    if initial_quote_alert == quote_alert do
+      {false, quote_alert}
+    else
+      {true, quote_alert}
+    end
+  end
+
+  def filter_quote_alerts_to_go_off(%Quote{} = myquote, [], result) do
+    result
+  end
+
+  # Receives the quote alerts relevant to a quote and returns only the ones to need to be triggered
+  def filter_quote_alerts_to_go_off(%Quote{} = myquote, quote_alerts, result) do
+    [first_quote_alert | rest] = quote_alerts
+    case should_quote_alert_go_off?(myquote, first_quote_alert) do
+      {true, quote_alert} -> filter_quote_alerts_to_go_off(myquote, rest, [quote_alert] ++ result)
+        {false, _quote_alert} -> filter_quote_alerts_to_go_off(myquote, rest, result)
     end
   end
 
 
-  # Quote, [QuoteAlert{}] -> [QuoteAlert{}]
+
+  # Quote, [QuoteAlert{}, ...] -> [QuoteAlert{}, ...]
   # For the coin in Quote return all the respective Quote Alerts that need to go off
   # How it works: We filter the quote alerts for the current coin in Quote,
   # then we output the quote alerts if they need to go off
   def quote_alerts_that_go_off_for_quote(%Quote{} = myquote, quote_alerts) when is_list(quote_alerts) do
     relevant_quote_alerts = Enum.filter(quote_alerts, fn quote_alert -> quote_alert.coin_id == myquote.coin_id end)
-    filtered_alerts = Enum.filter(relevant_quote_alerts, fn quote_alert -> should_quote_alert_go_off?(myquote, quote_alert) end)
-    insert_trigger_quote(myquote, filtered_alerts)
-  end
-
-  def insert_trigger_quote(%Quote{} = my_quote, quote_alerts) do
-    Enum.map(quote_alerts, fn quote_alert -> update_quote_alert(quote_alert, %{"trigger_quote_id" => my_quote.id}) end)
-    |> Enum.map(fn {:ok, quote_alert} -> quote_alert end)
+    filtered_alerts = filter_quote_alerts_to_go_off(myquote, relevant_quote_alerts, [])
   end
 
   # [], (1)[QuoteAlert, ...], (2)[QuoteAlert] -> (2)[QuoteAlert]
@@ -1172,9 +1375,147 @@ defmodule Hodl.Portfolio do
   end
 
   #Sends the email when the alert is triggered
-  def send_quote_alert_email(%QuoteAlert{trigger_quote_id: _} = quote_alert) do
-    quote_alert = Repo.preload(quote_alert, [:trigger_quote, :coin, :user])
+  def send_quote_alert_email(%QuoteAlert{} = quote_alert) do
+    quote_alert = Repo.preload(quote_alert, [:trigger_quote, :coin, :user]) # Fix this
     email = HodlWeb.UserEmail.alert(quote_alert.user, quote_alert.trigger_quote, quote_alert)
     HodlWeb.Pow.Mailer.process(email)
+  end
+
+  # %AlertTrigger{} ->
+    # Sends the email to the user for the corresponding alerttrigger given
+  def send_alert_trigger_email(%AlertTrigger{} = alert_trigger) do
+    email = HodlWeb.UserEmail.alert_trigger(alert_trigger.quote_alert.user, alert_trigger)
+    HodlWeb.Pow.Mailer.process(email)
+  end
+
+  # I need: name of coin, quote alert details, quote details.
+  # %AlertTrigger{} -> Map
+  # Triggers the alert trigger by sending the email to the user.
+  def prepare_alert_trigger(%AlertTrigger{} = alert_trigger) do
+    Repo.preload(alert_trigger, [quote: [:coin], quote_alert: [:base_coin, :user] ])
+  end
+
+  def trigger_message(%AlertTrigger{type: "above_percentage"} = alert_trigger) do
+    "#{alert_trigger.quote.coin.name} increased #{alert_trigger.quote_alert.above_percentage} %"
+  end
+
+  def trigger_message(%AlertTrigger{type: "below_percentage"} = alert_trigger) do
+    "#{alert_trigger.quote.coin.name} decreased #{alert_trigger.quote_alert.below_percentage} %"
+  end
+
+  def trigger_message(%AlertTrigger{type: "above_price"} = alert_trigger) do
+    "#{alert_trigger.quote.coin.name} went higher than #{alert_trigger.quote_alert.above_price} #{alert_trigger.quote_alert.base_coin.symbol}"
+  end
+
+  def trigger_message(%AlertTrigger{type: "below_price"} = alert_trigger) do
+    "#{alert_trigger.quote.coin.name} went lower than #{alert_trigger.quote_alert.below_price} #{alert_trigger.quote_alert.base_coin.symbol}"
+  end
+
+
+  def prepare_quote_alert_for_email(%QuoteAlert{} = quote_alert) do
+    quote_alert
+  end
+
+  @doc """
+  Returns the list of alerttriggers.
+
+  ## Examples
+
+      iex> list_alerttriggers()
+      [%AlertTrigger{}, ...]
+
+  """
+  def list_alerttriggers do
+    Repo.all(AlertTrigger)
+  end
+
+  @doc """
+  Gets a single alert_trigger.
+
+  Raises `Ecto.NoResultsError` if the Alert trigger does not exist.
+
+  ## Examples
+
+      iex> get_alert_trigger!(123)
+      %AlertTrigger{}
+
+      iex> get_alert_trigger!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_alert_trigger!(id), do: Repo.get!(AlertTrigger, id)
+
+  def get_alert_trigger_by_uuid(uuid), do: Repo.get_by(AlertTrigger, uuid)
+
+  def get_alert_trigger_loaded!(id) do
+    q = from alerttrigger in AlertTrigger,
+      where: alerttrigger.id == ^id,
+      preload: [quote: [:coin], quote_alert: [:base_coin, :user] ]
+    Repo.one(q)
+  end
+
+  @doc """
+  Creates a alert_trigger.
+
+  ## Examples
+
+      iex> create_alert_trigger(%{field: value})
+      {:ok, %AlertTrigger{}}
+
+      iex> create_alert_trigger(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_alert_trigger(attrs \\ %{}) do
+    %AlertTrigger{}
+    |> AlertTrigger.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a alert_trigger.
+
+  ## Examples
+
+      iex> update_alert_trigger(alert_trigger, %{field: new_value})
+      {:ok, %AlertTrigger{}}
+
+      iex> update_alert_trigger(alert_trigger, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_alert_trigger(%AlertTrigger{} = alert_trigger, attrs) do
+    alert_trigger
+    |> AlertTrigger.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a alert_trigger.
+
+  ## Examples
+
+      iex> delete_alert_trigger(alert_trigger)
+      {:ok, %AlertTrigger{}}
+
+      iex> delete_alert_trigger(alert_trigger)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_alert_trigger(%AlertTrigger{} = alert_trigger) do
+    Repo.delete(alert_trigger)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking alert_trigger changes.
+
+  ## Examples
+
+      iex> change_alert_trigger(alert_trigger)
+      %Ecto.Changeset{data: %AlertTrigger{}}
+
+  """
+  def change_alert_trigger(%AlertTrigger{} = alert_trigger, attrs \\ %{}) do
+    AlertTrigger.changeset(alert_trigger, attrs)
   end
 end

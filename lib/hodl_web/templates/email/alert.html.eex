@@ -1,12 +1,9 @@
 <div>
-<h1> <%= @quote_alert.coin.name %> Notification </h1>
-<%= if @quote_alert.comparator == "above" do %>
-<h4>The price was equal or higher than <%= @quote_alert.price_usd %> US Dollars</h4>
-<% else %>
-<h4> The price went lower than <%= @quote_alert.price_usd %> US Dollars </h4>
-<% end %>
+<h1> <%= @alert_trigger.quote.coin.name %> Notification </h1>
 
-<h4> To see the last price of <%= @quote_alert.coin.name %> go to our site :)</h4>
+<h4> <%= @alert_trigger.message %> </h4>
+
+<h4> To see the last price of <%= @alert_trigger.quote.coin.name %> go to our site :)</h4>
 <h4> The trigger price was <%= @trigger_price %>USD at <%= @trigger_time%> UTC time  </h4>
 
 </div>

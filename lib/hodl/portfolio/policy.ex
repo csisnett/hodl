@@ -9,13 +9,13 @@ defmodule Hodl.Portfolio.Policy do
     def authorize(action, %User{}, attrs) when action in [:create_alert] do
         true
     end
-    
-    # authorize users to edit and soft delete only their own alerts when they don't haven't been triggered
-    def authorize(action, %User{id: user_id}, %QuoteAlert{user_id: user_id, trigger_quote_id: nil} = quote_alert) when action in [:update_quote_alert, :soft_delete_quote_alert] do
+
+    # authorize users to edit and soft delete only their own alerts. To do: We need to also check if they've already triggered
+    def authorize(action, %User{id: user_id}, %QuoteAlert{user_id: user_id} = quote_alert) when action in [:update_quote_alert, :soft_delete_quote_alert] do
         true
     end
 
-    
+
 
     # Admin can do anything
     def authorize(action, %User{role: "admin"}, _) do
