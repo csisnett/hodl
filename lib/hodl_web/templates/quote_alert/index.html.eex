@@ -18,7 +18,7 @@ Symbol: {{edit_alert.coin_symbol}} <br>  Current price: {{edit_alert.coin_price}
 </b-row>
 </b-container>
   <br> <br> <b-button type="submit" value="submit" style="float: center;" variant="outline-primary">Save changes</b-button> <b-button variant="outline-danger"  @click="delete_alert_modal = true"> Delete alert </b-button>
-  
+
 
 </div>
 </b-form>
@@ -150,7 +150,7 @@ function app_csrf_token(){
 <script>
 
 Vue.component('alert', {
-  props: ['coin_name', 'comparator', 'coin_symbol', 'price_usd', 'uuid', 'coin_uuid'],
+  props: ['coin_name', 'comparator', 'coin_symbol', 'above_price', 'below_price', 'above_percentage', 'below_percentage', 'uuid', 'coin_uuid'],
   data: function(){
     return {
       email: ''
@@ -165,7 +165,7 @@ Vue.component('alert', {
       } else {
         comparator_message = 'lower than'
       }
-      
+
       let coin = app.coins.find(element => element.uuid == this.coin_uuid)
       console.log(coin)
       let alert_info = {
@@ -188,11 +188,31 @@ Vue.component('alert', {
       return h;
     },
     message: function(){
-      if(this.comparator == "above"){
-        return `Trigger when ${this.coin_symbol} is ${this.price_usd} US$ or higher`
-      } else{
-        return `Trigger when ${this.coin_symbol} is lower than ${this.price_usd} US$`
+      let message_str = 'Alert me ';
+
+      if(this.above_price !== ''){
+        message_str = message_str + `when ${this.coin_symbol} is ${this.above_price} or higher`
       }
+      if(this.below_price !== ''){
+        if(message_str !== 'Alert me '){
+          message_str = message_str + ' or '
+        }
+        message_str = message_str +  `when ${this.coin_symbol} is below ${this.below_price}`
+      }
+
+      if(this.above_percentage !== ''){
+        message_str = message_str + `when ${this.coin_symbol} has increased ${this.above_percentage}%`
+      }
+
+      if(this.below_percentage !== ''){
+        if(message_str !== 'Alert me '){
+          message_str = message_str + ' or '
+        }
+        message_str = message_str +  `when ${this.coin_symbol} has decreased ${this.below_percentage}%`
+      }
+
+
+      return message_str;
     }
   },
   template: '<div style="width: 200px;"> <b-card align="center" border-variant="primary" v-bind:header="header_title" header-bg-variant="primary" header-text-variant="white"> <b-card-text>{{message}}</b-card-text> <button v-on:click="update_edit_modal()"> Edit</button> </b-card> <br></div>'
@@ -256,7 +276,7 @@ var app = new Vue({
               this.user_alert_price = ''
               }
             }
-            
+
         },
     edit_alert: function(){
       let price = parseFloat(this.edit_alert.coin_price)
