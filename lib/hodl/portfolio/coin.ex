@@ -18,7 +18,7 @@ defmodule Hodl.Portfolio.Coin do
     belongs_to :platform, Coin
     field :token_address, :string
     field :price_usd, :decimal, virtual: true
-    has_one :last_quote, Quote
+    belongs_to :last_quote, Quote
     timestamps()
   end
 
@@ -34,5 +34,6 @@ defmodule Hodl.Portfolio.Coin do
     |> cast(attrs, [:name, :symbol, :last_quote_id, :coinmarketcap_id, :platform_id, :token_address, :country_coin?])
     |> validate_required([:name, :symbol])
     |> foreign_key_constraint(:platform_id)
+    |> foreign_key_constraint(:last_quote_id)
   end
 end
