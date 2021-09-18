@@ -546,9 +546,7 @@ defmodule Hodl.Portfolio do
   # [%{}] -> :ok
   # Creates a %Quote{} for each quote param given
   def create_new_quotes(quotes_params) when is_list(quotes_params) do
-    Enum.map(quotes_params, fn coin ->
-      {:ok, new_quote} =  get_quote_info(coin) |> create_new_quote
-      new_quote end)
+    Enum.map(quotes_params, fn coin -> get_quote_info(coin) |> create_new_quote end)
   end
 
   # map -> {:ok, %Quote{}} || {:error, %Changeset{}}
@@ -558,9 +556,13 @@ defmodule Hodl.Portfolio do
       nil -> #If the coin doesn't exist in our db:
         {:ok, coin} = create_coin(quote_params) #create the coin
         coin = Repo.get_by(Coin, coinmarketcap_id: id)
-        Map.put(quote_params, "coin_id", coin.id) |> create_quote
-
-      coin -> Map.put(quote_params, "coin_id", coin.id) |> create_quote
+        {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote
+        update_coin(coin, %{"last_quote_id" => thequote.id})
+        thequote
+      coin ->
+        {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote
+        update_coin(coin, %{"last_quote_id" => thequote.id})
+        thequote
     end
   end
 
@@ -765,12 +767,29 @@ defmodule Hodl.Portfolio do
     Repo.all(query)
   end
 
+  def get_ranking_coins(id) do
+    query = from c in Coin,
+    inner_join: cr in Coinrank,
+    on: c.id == cr.coin_id,
+    where: cr.ranking_id == ^id,
+    order_by: cr.position,
+    select: c,
+    preload: [:last_quote]
+    Repo.all(query)
+  end
+
   # -> [%Quote{}, ...]
   # Gets the latest quotes from the coins in the CMC rank
-  def get_top_coins_quotes() do
-    ranking = Portfolio.get_ranking!(1)
-    coins = get_ranking_coins(ranking)
-    coins_quotes = Enum.map(coins, fn coin -> Map.put(coin, :price_usd, last_quote_price(coin))end)
+  def get_top_coins() do
+    get_ranking_coins(1)
+  end
+
+  def get_coins_last_quotes(coin_ids) do
+    query = from q in Quote,
+    order_by: [desc: q.inserted_at],
+    where: q.coin_id in ^coin_ids,
+    select: q
+    Repo.all(query)
   end
 
   # Returns the price USD of the last quote for the coin received
@@ -811,12 +830,6 @@ defmodule Hodl.Portfolio do
     limit: 1,
     select: q
     Repo.one(query)
-  end
-
-  # Gets all coins of the first ranking. The coin market cap ranking that is
-  def get_top_coins() do
-    ranking = Portfolio.get_ranking!(1)
-    get_ranking_coins(ranking)
   end
 
   @doc """

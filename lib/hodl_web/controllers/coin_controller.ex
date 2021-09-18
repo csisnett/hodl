@@ -32,7 +32,7 @@ defmodule HodlWeb.CoinController do
   end
 
   def top_coins(conn, %{}) do
-    coins = Portfolio.get_top_coins_quotes()
+    coins = Portfolio.get_top_coins() |> Enum.map(fn coin -> Map.put(coin, :price_usd, coin.last_quote.price_usd) end)
     json(conn, %{"coins" => coins})
   end
 

@@ -2,7 +2,7 @@ defmodule Hodl.Portfolio.Coin do
   @behaviour Access
   use Ecto.Schema
   import Ecto.Changeset
-  alias Hodl.Portfolio.Coin
+  alias Hodl.Portfolio.{Coin, Quote}
 
   # To see what fetch is about:
   #https://elixirforum.com/t/ecto-schema-and-access-behaviour/12995/3
@@ -18,6 +18,7 @@ defmodule Hodl.Portfolio.Coin do
     belongs_to :platform, Coin
     field :token_address, :string
     field :price_usd, :decimal, virtual: true
+    has_one :last_quote, Quote
     timestamps()
   end
 
@@ -30,7 +31,7 @@ defmodule Hodl.Portfolio.Coin do
   @doc false
   def changeset(coin, attrs) do
     coin
-    |> cast(attrs, [:name, :symbol, :coinmarketcap_id, :platform_id, :token_address, :country_coin?])
+    |> cast(attrs, [:name, :symbol, :last_quote_id, :coinmarketcap_id, :platform_id, :token_address, :country_coin?])
     |> validate_required([:name, :symbol])
     |> foreign_key_constraint(:platform_id)
   end
