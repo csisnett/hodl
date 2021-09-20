@@ -462,12 +462,13 @@ defmodule Hodl.Portfolio do
   # Compares the Quotes{} to active quote alerts to determine which need to go off
   # Then sets off the quote alerts that need to go off
   def initiate_quote_retrieval() do
-    incoming_quotes = get_top_quotes() |> create_new_quotes()
+    incoming_quotes = get_top_coins() |> create_last_quotes_for_coins()
     active_quote_alerts = list_active_quote_alerts()
     alerts_to_trigger = detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
     |> trigger_these_alerts()
   end
 
+  # I use this for testing so I don't have to call the API every time
   def initiate_2(incoming_quotes) do
     active_quote_alerts = list_active_quote_alerts()
     alerts_to_trigger = detect_alerts_to_set_off(incoming_quotes, active_quote_alerts, [])
@@ -525,6 +526,15 @@ defmodule Hodl.Portfolio do
     data
   end
 
+
+  # GEts the quotes from coin market cap and creates the quotes
+  def create_last_quotes_for_coins(coins) when is_list(coins) do
+    data = get_coin_quote(coins)
+    quotes = Enum.map(coins, fn coin -> data[Integer.to_string(coin.coinmarketcap_id)] |> get_quote_info() |> create_new_quote() end) |> Enum.map(fn {:ok, quote} -> quote end)
+  end
+
+
+
     # Integer -> Map
     # From the coin's coin_market)cap_id returns a map with the coin's latest quote price
   def get_coin_quote(coinmarketcap_id) do
@@ -553,16 +563,26 @@ defmodule Hodl.Portfolio do
   # Creates a new quote from the map params given
   def create_new_quote(%{"coinmarketcap_id" => id} = quote_params) do
     case Repo.get_by(Coin, coinmarketcap_id: id) do
+
       nil -> #If the coin doesn't exist in our db:
+      {:ok, thequote} = Repo.transaction(fn ->
         {:ok, coin} = create_coin(quote_params) #create the coin
         coin = Repo.get_by(Coin, coinmarketcap_id: id)
-        {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote
+        {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote()
         update_coin(coin, %{"last_quote_id" => thequote.id})
+        {:ok, thequote}
+      end)
+
         thequote
       coin ->
-        {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote
-        update_coin(coin, %{"last_quote_id" => thequote.id})
-        thequote
+        {:ok, thequote} = Repo.transaction(fn ->
+
+          {:ok, thequote} = Map.put(quote_params, "coin_id", coin.id) |> create_quote()
+          update_coin(coin, %{"last_quote_id" => thequote.id})
+          {:ok, thequote}
+        end)
+
+          thequote
     end
   end
 
@@ -782,6 +802,11 @@ defmodule Hodl.Portfolio do
   # Gets the latest quotes from the coins in the CMC rank
   def get_top_coins() do
     get_ranking_coins(1)
+  end
+
+  def any() do
+    coins = Portfolio.get_top_coins()
+    |> Enum.filter(fn coin -> coin.last_quote_id == nil end)
   end
 
   def get_coins_last_quotes(coin_ids) do
