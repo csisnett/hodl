@@ -3,8 +3,9 @@ defmodule Hodl.Accounts.Setting do
   import Ecto.Changeset
   alias Hodl.Users.User
 
-  @valid_setting_keys ["timezone", "admin"]
+  @valid_setting_keys ["timezone", "phone_number"]
 
+  @derive {Jason.Encoder, only: [:setting_key, :value, :uuid]}
   schema "settings" do
     field :setting_key, :string
     field :value, :string

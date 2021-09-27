@@ -7,7 +7,9 @@ defmodule HodlWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_hodl_key",
-    signing_salt: "gS6/I7zP"
+    secure: true,
+    signing_salt: "gS6/I7zP",
+    same_site: "Strict"
   ]
 
   socket "/socket", HodlWeb.UserSocket,
@@ -25,7 +27,7 @@ defmodule HodlWeb.Endpoint do
     at: "/",
     from: :hodl,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt description-of-product.pdf)
+    only: ~w(css fonts images img js favicon.ico robots.txt description-of-product.pdf)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -52,7 +54,7 @@ defmodule HodlWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug Pow.Plug.Session, otp_app: :hodl
-  plug PowPersistentSession.Plug.Cookie
+  plug PowPersistentSession.Plug.Cookie, persistent_session_cookie_opts: [same_site: "Strict", secure: true]
   plug CORSPlug
   plug HodlWeb.Router
 end
