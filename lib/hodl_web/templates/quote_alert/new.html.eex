@@ -1,13 +1,13 @@
 
 <%= csrf_meta_tag() %>
+<script src="https://unpkg.com/vue-tel-input"></script>
+<link rel="stylesheet" href="https://unpkg.com/vue-tel-input/dist/vue-tel-input.css" />
 <div id="app_basic" class="container">
-
 
 <b-form @submit="onSubmit">
 <b-button size="lg" v-on:click="change_alert_type('price_alert')" squared v-bind:variant="price_button_variant">$</b-button>
 <b-button  size="lg" v-on:click="change_alert_type('percentage_alert')" squared v-bind:variant="percentage_button_variant">%</b-button>
-<h1>New Price alert</h1>
-
+<h1>New Email alert</h1>
 
 
 Current coin: <b-form-select v-model="selected" :options="options"></b-form-select> Current price: {{show_price}} USD  <br> <br>
@@ -27,6 +27,15 @@ Current coin: <b-form-select v-model="selected" :options="options"></b-form-sele
         <h4 style="display: inline-block"> Alert when price decreases by: </h4>
     <input type="text" style="width: 150px;" v-model="user_below_percentage"> % from now
 </div>
+<div style="white-space: nowrap">
+ <h4 style="display: inline-block"> Get SMS alert as well </h4>
+<b-form-checkbox style="display: inline-block" v-model="sms_check" name="check-button" switch>
+    </b-form-checkbox>
+    <div v-if="sms_check">
+  <vue-tel-input  v-bind="bindProps" v-model="tel_value"></vue-tel-input>
+  </div>
+    </div>
+
 
 <input type="submit" value="Create alert">
 </b-form>
@@ -53,7 +62,6 @@ Current coin: <b-form-select v-model="selected" :options="options"></b-form-sele
 <span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>
 
 <script>
-
 var app = new Vue({
     el: '#app_basic',
     data: function(){
@@ -75,7 +83,12 @@ var app = new Vue({
               { text: '%', value: 'percentage_alert' }
             ],
             percentage_button_variant: 'outline-primary',
-            price_button_variant: 'primary'
+            price_button_variant: 'primary',
+            sms_check: false,
+            tel_value: '',
+            bindProps: {
+              mode: 'international'
+            }
         }
     },
     created: function (){
@@ -145,8 +158,6 @@ var app = new Vue({
      /* Use either price or percentage for the alert */
     if(app.alert_type == "price_alert"){
       params.above_price = app.user_above_price;
-    }
-    if(app.alert_type == "price_alert"){
       params.below_price = app.user_below_price;
     }
     if(app.alert_type == "percentage_alert"){
@@ -154,6 +165,10 @@ var app = new Vue({
       params.below_percentage = app.user_below_percentage;
       let price = parseFloat(app.options[app.selected]["price_usd"])
       params.base_price = price;
+    }
+    if(app.sms_check == true){
+      let str = app.tel_value.replace(/\s+/g, '');
+      params.phone_number = str;
     }
 
     return params;
