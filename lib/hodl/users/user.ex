@@ -6,6 +6,7 @@ defmodule Hodl.Users.User do
 
   schema "users" do
     field :username, :string
+    field :uuid, Ecto.ShortUUID, autogenerate: true
     field :role, :string, default: "regular"
     pow_user_fields()
 
@@ -46,7 +47,7 @@ defmodule Hodl.Users.User do
       noun_or_adjective = :rand.uniform(2)
       random_number =  :rand.uniform(999) |> Integer.to_string
       case noun_or_adjective do
-        1 -> 
+        1 ->
           adjective = Enum.random(adjectives)
           adjective <> random_number
         2 ->
@@ -72,7 +73,7 @@ defmodule Hodl.Users.User do
         else
           changeset |> put_change(:username, String.downcase(username))
       end
-      
+
     end
   end
 
