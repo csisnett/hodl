@@ -1,28 +1,190 @@
-<h1>Listing Settings</h1>
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/intlTelInput.min.css") %>" >
+<style>
+.iti__flag {background-image: url( "<%= Routes.static_path(@conn, "/img/flags.png") %>";}
 
-<table>
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .iti__flag {background-image: url("<%= Routes.static_path(@conn, "/img/flags@2x.png") %>");}
+}
+</style>
+
+<h1>My Settings</h1>
+<%= csrf_meta_tag() %>
+<br>
+<div id="app_basic" class="container">
+<b-button :disabled="disable_cancel" v-on:click="return_to_original" variant="outline-secondary">Cancel</b-button>
+<b-button :disabled="disable_save" v-on:click="save_changes" variant="outline-primary">Save changes</b-button>
+
+
+    <b-modal ref="my-modal" aria-label="Your settings were updated successfully" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+      <div class="d-block text-center">
+        <h5>Your settings were updated successfully</h5>
+      </div>
+      </b-modal>
+      <h4 v-if="loading_settings"> Loading settings...
+<b-progress :value="89" :max="100"  class="mb-3" show-progress animated></b-progress>
+</h4>
+ <table>
   <thead>
     <tr>
-      <th>Setting key</th>
+      <th>Name</th>
       <th>Value</th>
 
       <th></th>
     </tr>
   </thead>
   <tbody>
-<%= for setting <- @settings do %>
-    <tr>
-      <td><%= setting.setting_key %></td>
-      <td><%= setting.value %></td>
 
-      <td>
-        <span><%= link "Show", to: Routes.setting_path(@conn, :show, setting) %></span>
-        <span><%= link "Edit", to: Routes.setting_path(@conn, :edit, setting) %></span>
-        <span><%= link "Delete", to: Routes.setting_path(@conn, :delete, setting), method: :delete, data: [confirm: "Are you sure?"] %></span>
-      </td>
+    <tr>
+      <td>Phone number</td>
+      <td> <input type="tel" id="phone" @change="phone_change"> </td>
+
     </tr>
-<% end %>
+
+        <tr>
+      <td>setting.setting_key</td>
+      <td> setting.value</td>
+
+    </tr>
+
   </tbody>
 </table>
 
-<span><%= link "New Setting", to: Routes.setting_path(@conn, :new) %></span>
+</div>
+<script src="<%= Routes.static_path(@conn, "/js/utils.js") %>"> </script>
+<script src="<%= Routes.static_path(@conn, "/js/intlTelInput.js") %>"></script>
+
+<script>
+
+var app = new Vue({
+  el: '#app_basic',
+  data: function(){
+    return {
+      example: "true",
+      phone: "",
+      disable_cancel: true,
+      disable_save: false,
+      original_map: {},
+      modification_map: {},
+      changed: false,
+      loading_settings: true,
+    }
+  },
+  created: function() {
+    get_settings()
+  },
+  methods: {
+
+    save_changes(){
+      update_settings();
+    },
+    something_changed(){
+      app.changed = true;
+      app.disable_cancel = false;
+    },
+    phone_change(){
+      app.something_changed()
+      app.modification_map.phone_number = telinput.getNumber();
+    },
+
+    return_to_original(){
+      /* Use original map to do that */
+      console.log("return to original called")
+      if(app.original_map["phone_number"] === undefined) {
+      telinput.setNumber("")
+      telinput.setCountry("US")
+      } else{
+        telinput.setNumber(app.original_map["phone_number"]);
+        telinput.setCountry(app.original_map["country"])
+      }
+      app.changed = false;
+      app.disable_cancel = true;
+      app.modification_map = {};
+    },
+
+    showModal() {
+        this.$refs['my-modal'].show()
+      },
+
+    hideModal() {
+        this.$refs['my-modal'].hide()
+      }
+  }
+})
+
+
+
+const input = document.querySelector("#phone");
+var telinput = intlTelInput(input, {
+    utilScript: "<%= Routes.static_path(@conn, "/js/utils.js") %>"
+});
+
+function get_settings(){
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  let data = {};
+  data._csrf_token = csrf_token;
+
+  let json = JSON.stringify(data);
+  let xhr = new XMLHttpRequest();
+  xhr.open("GET", "/user-settings", true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+	let response = JSON.parse(xhr.responseText);
+    console.log(response)
+  if (xhr.status == "200") {
+    console.log("Got settings! wow")
+    for (i = 0; i < response.settings.length; i++){
+            let setting_key = response.settings[i]["setting_key"]
+            let setting_value = response.settings[i]["value"]
+            app.original_map[setting_key] = setting_value;
+        }
+
+        if(app.original_map["phone_number"] !== undefined){
+          telinput.setNumber(app.original_map["phone_number"])
+          let country_data = telinput.getSelectedCountryData()
+          let country = country_data.iso2
+          app.original_map["country"] = country;
+          app.phone = ''
+        }
+        app.loading_settings = false;
+    } else {
+      console.log("No settings :(")
+      }
+    }
+  xhr.send(json);
+}
+
+function update_settings(){
+  let data = {}
+  data.settings = app.modification_map;
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  data._csrf_token = csrf_token;
+  let url = '/user-settings/'
+
+  let json = JSON.stringify(data);
+  let xhr = new XMLHttpRequest();
+  xhr.open("PUT", url, true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+	let response = JSON.parse(xhr.responseText);
+    console.log(response)
+  if (xhr.status == "200") {
+    console.log("Settings modified! wow");
+    app.showModal();
+    } else {
+      console.log("No modification :(")
+      }
+    }
+  xhr.send(json);
+}
+
+function app_csrf_token(){
+  let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+  app.csrf_token = csrf_token;
+}
+
+function return_original(){
+  telinput.setNumber("+1");
+  input.value = ""
+}
+
+</script>

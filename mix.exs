@@ -56,7 +56,9 @@ defmodule Hodl.MixProject do
       {:phoenix_swoosh, "~> 0.3"},
       {:decimal, "~> 2.0"},
       {:bodyguard, "~> 2.4"},
-      {:tzdata, "~> 1.1"}
+      {:tzdata, "~> 1.1"},
+      {:ex_phone_number, "~> 0.2"},
+      {:mojito, "~> 0.7.7"}
     ]
   end
 

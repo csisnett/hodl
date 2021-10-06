@@ -5,8 +5,15 @@ defmodule HodlWeb.SettingController do
   alias Hodl.Accounts.Setting
 
   def index(conn, _params) do
-    settings = Accounts.list_settings()
+    user = conn.assigns.current_user
+    settings = Accounts.list_user_settings(user)
     render(conn, "index.html", settings: settings)
+  end
+
+  def index_user_settings(conn, _params) do
+    user = conn.assigns.current_user
+    settings = Accounts.list_user_settings(user)
+    json(conn, %{"settings" => settings})
   end
 
   def new(conn, _params) do
@@ -48,6 +55,19 @@ defmodule HodlWeb.SettingController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", setting: setting, changeset: changeset)
+    end
+  end
+
+  def update_settings(conn, %{"settings" => settings_params}) do
+    user = conn.assigns.current_user
+
+    case Accounts.update_several_settings(settings_params, user) do
+      {:ok, list_of_settings} ->
+
+        json(conn, %{"updated_settings" => list_of_settings})
+
+      {:error, _ } ->
+        json(conn, %{"error" => "Something went wrong"})
     end
   end
 

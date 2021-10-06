@@ -58,13 +58,16 @@ defmodule HodlWeb.Router do
     pipe_through [:browser, :protected]
     get "/new-alert", QuoteAlertController, :new
     resources "/coins", CoinController
+    get "/settings", SettingController, :index
   end
 
   scope "/", HodlWeb do
-    pipe_through [:api]
+    pipe_through [:api, :protected]
 
     get "/user-alerts", QuoteAlertController, :my_alerts
-    post "/alerts", QuoteAlertController, :create
+    get "/user-settings", SettingController, :index_user_settings
+    put "/user-settings", SettingController, :update_settings
+    get "/user-info/:uuid", UserController, :get_user_details
   end
 
   scope "/", HodlWeb do
@@ -76,6 +79,7 @@ defmodule HodlWeb.Router do
 
     get "/all-hodl", HodlscheduleController, :index
     get "/username-suggestion", PageController, :random_username
+    post "/alerts", QuoteAlertController, :create
   end
 
   # Other scopes may use custom stacks.
