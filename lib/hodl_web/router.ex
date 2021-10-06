@@ -67,6 +67,7 @@ defmodule HodlWeb.Router do
     get "/user-alerts", QuoteAlertController, :my_alerts
     get "/user-settings", SettingController, :index_user_settings
     put "/user-settings", SettingController, :update_settings
+    get "/user-info/:uuid", UserController, :get_user_details
   end
 
   scope "/", HodlWeb do

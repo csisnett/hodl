@@ -31,6 +31,10 @@ defmodule Hodl.Accounts do
     end
   end
 
+  def get_user_by_uuid(uuid) do
+    Repo.get_by(User, uuid: uuid)
+  end
+
   # %User{} -> %Plan{}
   # Outputs the user's current plan
   def get_current_plan(%User{} = user) do
@@ -66,6 +70,13 @@ defmodule Hodl.Accounts do
     Repo.all(Setting)
   end
 
+  def list_user_settings(%User{} = user) do
+    query = from s in Setting,
+    where: s.user_id == ^user.id,
+    select: s
+    Repo.all(query)
+  end
+
   @doc """
   Gets a single setting.
 
@@ -81,6 +92,13 @@ defmodule Hodl.Accounts do
 
   """
   def get_setting!(id), do: Repo.get!(Setting, id)
+
+  # %User{}, String -> %Setting{}
+  def get_user_setting(user = %User{}, setting_key) do
+    Repo.one(from s in Setting,
+    where: s.user_id == ^user.id and s.setting_key == ^setting_key,
+    select: s)
+  end
 
   @doc """
   Creates a setting.
@@ -100,6 +118,11 @@ defmodule Hodl.Accounts do
     |> Repo.insert()
   end
 
+  def create_setting(%{} = attrs, %User{} = user) do
+    Map.put(attrs, "user_id", user.id)
+    |> create_setting()
+  end
+
   @doc """
   Updates a setting.
 
@@ -116,6 +139,25 @@ defmodule Hodl.Accounts do
     setting
     |> Setting.changeset(attrs)
     |> Repo.update()
+  end
+
+  def create_or_update_setting(%{"setting_key" => setting_key, "value" => value} = params, user) do
+    case get_user_setting(user, setting_key) do
+      nil ->
+        {:ok, setting} = create_setting(params, user)
+        setting
+
+      setting ->
+        {:ok, setting} = update_setting(setting, params)
+        setting
+    end
+  end
+
+  # %{} -> [Setting{}, ...]
+  def update_several_settings(settings_params, user) do
+    keys = Map.keys(settings_params)
+    settings = Enum.map(keys, fn key -> create_or_update_setting(%{"setting_key" => key, "value" => settings_params[key]}, user) end)
+    {:ok, settings}
   end
 
   @doc """

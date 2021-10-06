@@ -10,11 +10,6 @@ defmodule Hodl.Messages do
   alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking, QuoteAlert, AlertTrigger}
   alias Hodl.Users.User
 
-
-  def send_sms(%AlertTrigger{} = alert_trigger) do
-    alert_trigger
-  end
-
   def send_twilio_sms() do
     twilio_sid = Application.fetch_env!(:hodl, :twilio_account_sid)
     twilio_auth_token = Application.fetch_env!(:hodl, :twilio_auth_token)
@@ -53,14 +48,18 @@ defmodule Hodl.Messages do
       Mojito.post("https://rest.nexmo.com/sms/json", headers, params)
   end
 
-  def message_bird_sms() do
-    params = %{"body" => "first bird message", "recipients" => "+50766725373", "originator" => "How to hodl"} |> URI.encode_query()
-    api_secret = "api_secret"
+  def message_bird_sms(message, recipient) do
+    api_secret = Application.fetch_env!(:hodl, :message_bird_api)
+    params = %{"body" => message, "recipients" => recipient, "originator" => "How to hodl"} |> URI.encode_query()
 
     headers = [
       {"content-type", "application/x-www-form-urlencoded"},
       {"authorization", "AccessKey #{api_secret}"}]
       Mojito.post("https://rest.messagebird.com/messages", headers, params)
+  end
+
+  def send_text_message(message, recipient) do
+    message_bird_sms(message, recipient)
   end
 
 end

@@ -1,7 +1,14 @@
 
 <%= csrf_meta_tag() %>
 <script src="https://unpkg.com/vue-tel-input"></script>
-<link rel="stylesheet" href="https://unpkg.com/vue-tel-input/dist/vue-tel-input.css" />
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/intlTelInput.min.css") %>" >
+<style>
+.iti__flag {background-image: url( "<%= Routes.static_path(@conn, "/img/flags.png") %>";}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .iti__flag {background-image: url("<%= Routes.static_path(@conn, "/img/flags@2x.png") %>");}
+}
+</style>
 <div id="app_basic" class="container">
 
 <b-form @submit="onSubmit">
@@ -29,10 +36,10 @@ Current coin: <b-form-select v-model="selected" :options="options"></b-form-sele
 </div>
 <div style="white-space: nowrap">
  <h4 style="display: inline-block"> Get SMS alert as well </h4>
-<b-form-checkbox style="display: inline-block" v-model="sms_check" name="check-button" switch>
+<b-form-checkbox style="display: inline-block" v-on:change="check_plan" v-model="sms_check" name="check-button" switch>
     </b-form-checkbox>
     <div v-if="sms_check">
-  <vue-tel-input  v-bind="bindProps" v-model="tel_value"></vue-tel-input>
+    Cellphone number:          {{local_phone_number}} <button v-on:click="open_phone_modal"> Edit </button>
   </div>
     </div>
 
@@ -55,11 +62,92 @@ Current coin: <b-form-select v-model="selected" :options="options"></b-form-sele
       </div>
       </b-modal>
 
+              <b-modal ref="fail-sms-modal" aria-label="The alert can't be created as you're already using all in your plan!" ok-only="true"  hide-backdrop hide-header button-size="sm" >
+      <div class="d-block text-center">
+        <br>
+        <h5>The alert can't be created because you haven't inserted your phone number</h5>
+      </div>
+      </b-modal>
+
+        <b-modal ref="modal-no-backdrop" id="modal-no-backdrop" hide-backdrop content-class="shadow" title="Platinum required">
+    <p class="my-2">
+     Platinum subscribers get up to 100 sms messages per month and unlimited email alerts.
+     <a href="/get-platinum"> Get platinum </a>
+    </p>
+  </b-modal>
+
 
 <%= output_alerts(@quotealerts) %>
 </div>
 
+<button id="modal-btn"> click me, I make a modal</button><div class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h3> Your cellphone: </h3>
+    <input type="tel" id="phone">
+    <button onclick="save_phone_number()"> Save </button>
+  </div>
+</div>
+
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  padding-top: 50px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.5);
+}.modal-content {
+  position: relative;
+  background-color: white;
+  padding: 20px;
+  margin: auto;
+  width: 75%;
+  -webkit-animation-name: animatetop;
+  -webkit-animation-duration: 0.4s;
+  animation-name: animatetop;
+  animation-duration: 0.4s
+}.close-btn {
+  float: right;
+  color: lightgray;
+  font-size: 24px;
+  font-weight: bold;
+}.close-btn:hover {
+  color: darkgray;
+}@-webkit-keyframes animatetop {
+  from {top:-300px; opacity:0}
+  to {top:0; opacity:1}
+}@keyframes animatetop {
+  from {top:-300px; opacity:0}
+  to {top:0; opacity:1}
+}
+</style>
+
+<script>
+let modalBtn = document.getElementById("modal-btn")
+let modal = document.querySelector(".modal")
+let closeBtn = document.querySelector(".close-btn")
+modalBtn.onclick = function(){
+  modal.style.display = "block"
+}
+closeBtn.onclick = function(){
+  modal.style.display = "none"
+}
+window.onclick = function(e){
+  if(e.target == modal){
+    modal.style.display = "none"
+  }
+}
+</script>
+
+
 <span><%= link "Back", to: Routes.quote_alert_path(@conn, :index) %></span>
+
+<script src="<%= Routes.static_path(@conn, "/js/utils.js") %>"> </script>
+<script src="<%= Routes.static_path(@conn, "/js/intlTelInput.js") %>"></script>
 
 <script>
 var app = new Vue({
@@ -88,18 +176,29 @@ var app = new Vue({
             tel_value: '',
             bindProps: {
               mode: 'international'
-            }
+            },
+            local_phone_number: 'You need to insert a phone number',
+            user_plan: '',
+
         }
     },
     created: function (){
         get_top_coins();
         let csrf_token = document.querySelector('meta[name="csrf-token"]').content;
         this.csrf_token = csrf_token;
+        get_user_details();
     },
     methods: {
         onSubmit(event){
             event.preventDefault();
+            if(this.sms_check == true && this.local_phone_number == 'You need to insert a phone number'){
+              this.$refs['fail-sms-modal'].show()
+            } else{
             create_quote_alert();
+            }
+        },
+        prevent_submit(event){
+          event.preventDefault();
         },
         showModal() {
         this.$refs['my-modal'].show()
@@ -109,6 +208,10 @@ var app = new Vue({
        },
       hideModal() {
         this.$refs['my-modal'].hide()
+      },
+
+      showplatinumModal() {
+        this.$refs['modal-no-backdrop'].show()
       },
 
       change_alert_type(alert_type){
@@ -121,8 +224,22 @@ var app = new Vue({
           this.price_button_variant = "outline-primary"
           this.percentage_button_variant = "primary"
         }
+      },
+      open_phone_modal(e){
+        e.preventDefault();
+        let modal = document.querySelector(".modal")
+        modal.style.display = "block"
+      },
+      check_plan(){
+        if(this.user_plan == 'free'){
+          this.showplatinumModal();
+          if(this.sms_check == true){
+            this.sms_check = false;
+          }
+        }
       }
     },
+
     computed: {
       render_price: function(){
         if(this.alert_type == "price_alert"){
@@ -167,8 +284,7 @@ var app = new Vue({
       params.base_price = price;
     }
     if(app.sms_check == true){
-      let str = app.tel_value.replace(/\s+/g, '');
-      params.phone_number = str;
+      params.phone_number = telinput.getNumber();
     }
 
     return params;
@@ -198,7 +314,7 @@ var app = new Vue({
         app.showModal()
       }
       else if(xhr.status == "409"){
-        console.log("quote alert wasn't created because the user don't have any left")
+        console.log("quote alert wasn't created because the user don't have any remaining alerts left")
         app.show_fail_modal()
       }
        else {
@@ -235,5 +351,43 @@ function get_top_coins(){
         }
       }
       xhr.send(json);
+}
+
+function get_user_details(){
+      let user_uuid = "<%= @conn.assigns.current_user.uuid %>"
+      let base_url = "/user-info/"
+      let final_url = base_url + user_uuid
+      let json = JSON.stringify({});
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", final_url, true);
+      xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+      xhr.onload = function () {
+	    let response = JSON.parse(xhr.responseText);
+        console.log(response)
+
+      if (xhr.status == "200") {
+        console.log("Got user details! wow")
+        app.user_plan = response.current_plan
+        if(response.phone_number != "no phone number inserted") {
+          app.local_phone_number = response.phone_number;
+          telinput.setNumber(response.phone_number);
+        }
+      } else {
+        console.log("No coins :(")
+        }
+      }
+      xhr.send(json);
+}
+
+const input = document.querySelector("#phone");
+var telinput = intlTelInput(input, {
+    utilScript: "<%= Routes.static_path(@conn, "/js/utils.js") %>"
+});
+
+function save_phone_number(){
+  let number_str = telinput.getNumber()
+  app.local_phone_number = number_str;
+  let modal = document.querySelector(".modal")
+  modal.style.display = "none"
 }
 </script>

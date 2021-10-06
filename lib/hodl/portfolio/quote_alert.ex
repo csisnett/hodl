@@ -22,7 +22,7 @@ defmodule Hodl.Portfolio.QuoteAlert do
     field :above_price_trigger_quote_id, :integer, virtual: true
     field :below_price_trigger_quote_id, :integer, virtual: true
     field :email, :string
-    field :phone_number, :string
+    field :phone_number, :string # If it doesn't have phone number it isn't sms alert
     field :active, :string
     field :deleted?, :boolean, default: false
     field :user_editable?, :boolean, virtual: true

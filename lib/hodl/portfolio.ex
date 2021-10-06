@@ -9,6 +9,7 @@ defmodule Hodl.Portfolio do
   alias Hodl.Accounts
   alias Hodl.Portfolio.{Coin, Coinrank, Cycle, Hodlschedule, Quote, Ranking, QuoteAlert, AlertTrigger}
   alias Hodl.Users.User
+  alias Hodl.Messages
 
   def get_user!(id), do: Repo.get!(User, id)
 
@@ -842,8 +843,7 @@ defmodule Hodl.Portfolio do
   # %Coin{} -> %Coin{price_usd: _}
   # Puts the last quote price for that coin in the struct
   def put_last_quote_price(%Coin{} = coin) do
-    myquote = last_quote(coin)
-    Map.put(coin, :price_usd, myquote.price_usd)
+    Map.put(coin, :price_usd, coin.last_quote.price_usd)
   end
 
   # Returns the last quote of the coin
@@ -1009,7 +1009,9 @@ defmodule Hodl.Portfolio do
   def list_these_coins(coin_string) do
     uuids = String.split(coin_string, ",")
     query = from c in Coin,
+    join: q in assoc(c, :last_quote),
     where: c.uuid in ^uuids,
+    preload: [last_quote: q],
     select: c
     Repo.all(query) |> Enum.map(fn coin -> put_last_quote_price(coin) end)
   end
@@ -1385,8 +1387,6 @@ defmodule Hodl.Portfolio do
     end
   end
 
-
-
   # Quote, [QuoteAlert{}, ...] -> [QuoteAlert{}, ...]
   # For the coin in Quote return all the respective Quote Alerts that need to go off
   # How it works: We filter the quote alerts for the current coin in Quote,
@@ -1424,6 +1424,19 @@ defmodule Hodl.Portfolio do
   def send_alert_trigger_email(%AlertTrigger{} = alert_trigger) do
     email = HodlWeb.UserEmail.alert_trigger(alert_trigger.quote_alert.user, alert_trigger)
     HodlWeb.Pow.Mailer.process(email)
+  end
+
+
+
+  def send_alert_trigger_text_message(%AlertTrigger{phone_number: nil} = alert_trigger) do
+    {:ok, :not_a_text_alert}
+  end
+
+    # AlertTrigger{} ->
+  # Sends a text message for the alertTrigger
+  def send_alert_trigger_text_message(%AlertTrigger{phone_number: recipient} = alert_trigger) do
+    message = trigger_message(alert_trigger)
+    Messages.send_text_message(message, recipient)
   end
 
   # I need: name of coin, quote alert details, quote details.

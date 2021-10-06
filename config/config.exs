@@ -12,6 +12,8 @@ config :hodl,
 
 config :hodl, development: System.get_env("DEVELOPMENT")
 
+config :hodl, message_bird_api: System.get_env("MESSAGE_BIRD_API")
+
 # Configures the endpoint
 config :hodl, HodlWeb.Endpoint,
   url: [host: "localhost", port: 4000],
