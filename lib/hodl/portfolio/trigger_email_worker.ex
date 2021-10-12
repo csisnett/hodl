@@ -1,5 +1,7 @@
 defmodule Hodl.Portfolio.TriggerEmailWorker do
   alias Hodl.Portfolio
+  alias Hodl.Repo
+
   use Oban.Worker, queue: :emails, max_attempts: 9
 
   @impl Oban.Worker
