@@ -1,5 +1,8 @@
 # Hodl
 
+# Why is it spelled Hodl?
+Hodl is a common way in the cryptocurrency community to say Hold, because of this common saying I decided to call the proyect How to Hodl.
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
